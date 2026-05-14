@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect x="0" y="0" width="512" height="512" rx="115" fill="#0e1410"/>
+
+  <circle cx="256" cy="208" r="200" fill="#88c8e0" stroke="#5a9cb8" stroke-width="4"/>
+  <rect x="230" y="397" width="51" height="109" rx="10" fill="#88c8e0" stroke="#5a9cb8" stroke-width="4"/>
+
+  <circle cx="358" cy="106" r="8" fill="#0e1410"/>
+  <circle cx="154" cy="106" r="8" fill="#0e1410"/>
+  <circle cx="154" cy="310" r="8" fill="#0e1410"/>
+  <circle cx="358" cy="310" r="8" fill="#0e1410"/>
+
+  <path d="M 392 208 A 136 136 0 1 1 256 72" stroke="#c5fc5b" stroke-width="21" fill="none" stroke-linecap="round"/>
+  <polygon points="256,53 256,91 288,72" fill="#c5fc5b"/>
+
+  <text x="256" y="296" text-anchor="middle" font-family="'Bricolage Grotesque', 'Helvetica Neue', Arial, sans-serif" font-size="256" font-weight="700" fill="#1a3d28">R</text>
+</svg>
