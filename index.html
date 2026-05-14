@@ -961,6 +961,7 @@
           </div>
         </div>
         <div class="reco-hint" id="reco-hint">Каждый матч играется до фикс. суммы очков (24 = 16 : 8, и т. п.). Победители получают больше, общий итог — фиксирован.</div>
+        <div class="reco-hint" id="reco-extra"></div>
       </div>
 
       <div class="grid-2" style="margin-top:14px;">
@@ -1248,6 +1249,10 @@ function recommendFormat(N, C, T) {
     // fallback
     best = { rounds: 6, points: 24, gamesPerPlayer: (6 * Math.min(N, C*4)) / N, roundMin: 14 };
   }
+
+  // Minimum rounds for "everyone partners everyone at least once":
+  // Each round produces 2*C partnerships; full coverage needs N*(N-1)/2.
+  best.fullRotationRounds = Math.ceil((N * (N - 1)) / (4 * C));
   return best;
 }
 
@@ -1412,6 +1417,7 @@ function renderRecommendation() {
     $('reco-points').textContent = '—';
     $('reco-games').textContent = '—';
     $('reco-hint').textContent = 'Нужно минимум 4 игрока.';
+    $('reco-extra').textContent = '';
     return;
   }
 
@@ -1427,6 +1433,31 @@ function renderRecommendation() {
 
   $('reco-hint').textContent =
     `Раунд ≈ ${Math.round(r.roundMin)} мин: каждый матч до ${r.points} очков (например 16:8 или 13:11).${ignored}${restHint}`;
+
+  // Extra info: full rotation rounds + "final fours" suggestion
+  const fullRot = r.fullRotationRounds;
+  const diff = fullRot - r.rounds;
+  let rotMsg;
+  if (diff > 0) {
+    rotMsg = `Полная ротация (каждый с каждым в паре): нужно ${fullRot} раундов — это на ${diff} больше рекомендованного. Увеличь время или раунды, если хочешь идеальную ротацию.`;
+  } else {
+    rotMsg = `Полная ротация (каждый с каждым в паре) укладывается в ${fullRot} раундов — рекомендованного формата хватит.`;
+  }
+
+  let finalMsg = '';
+  const groups = Math.floor(N / 4);
+  if (groups >= 2) {
+    const groupLabels = [];
+    for (let g = 0; g < groups; g++) {
+      const a = g * 4 + 1, b = a + 1, c = a + 2, d = a + 3;
+      groupLabels.push(`${a}+${d} vs ${b}+${c}`);
+    }
+    const extraPlayers = N - groups * 4;
+    const extraNote = extraPlayers > 0 ? ` (последние ${extraPlayers} игрок(ов) — отдых или замены)` : '';
+    finalMsg = ` Если осталось ~30 мин — «финал четвёрок» по местам в таблице: ${groupLabels.join(', ')}${extraNote}.`;
+  }
+
+  $('reco-extra').textContent = rotMsg + finalMsg;
 
   // suggest values into manual fields if user hasn't touched them yet
   if (!state._manualTouched) {
