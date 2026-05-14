@@ -1556,7 +1556,25 @@ function renderTournament() {
       </div>
     `;
   }).join('');
+  // Preserve focus on score input across re-renders so the mobile keyboard stays open
+  const ae = document.activeElement;
+  let focusRestore = null;
+  if (ae && ae.tagName === 'INPUT' && ae.dataset.matchCourt && ae.dataset.team) {
+    focusRestore = { court: ae.dataset.matchCourt, team: ae.dataset.team };
+  }
+
   $('t-courts-list').innerHTML = html;
+
+  if (focusRestore) {
+    const sel = `input[data-match-court="${focusRestore.court}"][data-team="${focusRestore.team}"]`;
+    const el = $('t-courts-list').querySelector(sel);
+    if (el) {
+      el.focus();
+      // Move cursor to end so the next typed digit appends instead of replacing
+      const v = el.value;
+      try { el.setSelectionRange(v.length, v.length); } catch (_) {}
+    }
+  }
 
   // resters
   if (round.resters && round.resters.length > 0) {

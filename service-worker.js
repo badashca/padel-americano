@@ -3,7 +3,7 @@
 // При обновлении файлов на GitHub Pages меняй CACHE_VERSION на новое значение —
 // старый кеш будет удалён при следующем заходе пользователя.
 
-const CACHE_VERSION = 'rota-v1';
+const CACHE_VERSION = 'rota-v2';
 
 const APP_SHELL = [
   './',
