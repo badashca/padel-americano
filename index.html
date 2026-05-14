@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f4efe4" />
+<title>Americano · Падел-турнир</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Outfit:wght@300..700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4efe4;
+    --bg-elev: #fbf8f1;
+    --paper: #ffffff;
+    --ink: #0e1410;
+    --ink-soft: #4a544c;
+    --ink-mute: #8a9088;
+    --line: #d8d2c4;
+    --line-soft: #e9e3d4;
+    --court: #2d5e3e;
+    --court-deep: #1a3d28;
+    --lime: #c5fc5b;
+    --coral: #d94f37;
+    --gold: #c89a3a;
+    --shadow: 0 1px 0 rgba(14, 20, 16, 0.06), 0 6px 24px -10px rgba(14, 20, 16, 0.18);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: "Outfit", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(45, 94, 62, 0.06), transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(217, 79, 55, 0.05), transparent 40%);
+    background-attachment: fixed;
+  }
+  .display { font-family: "Bricolage Grotesque", serif; font-weight: 700; letter-spacing: -0.02em; }
+  .mono { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
+
+  .app {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 24px 20px 96px;
+  }
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-mark {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--lime);
+    display: grid; place-items: center;
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700; font-size: 22px;
+    transform: rotate(-4deg);
+    box-shadow: 3px 3px 0 var(--court);
+  }
+  .brand-name {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .brand-sub {
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: -2px;
+  }
+  .top-actions {
+    display: flex; gap: 8px;
+  }
+  .icon-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    color: var(--ink-soft);
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .icon-btn:hover { background: var(--ink); color: var(--lime); border-color: var(--ink); }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  .screen { display: none; animation: fade .25s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- Headings ---------- */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--court);
+    font-weight: 600;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 22px; height: 2px;
+    background: var(--court);
+  }
+  h1.title {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    font-size: clamp(34px, 7vw, 56px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin: 10px 0 8px;
+  }
+  h1.title em { font-style: normal; color: var(--court); }
+  .lede {
+    color: var(--ink-soft);
+    max-width: 56ch;
+    margin: 0 0 28px;
+    font-size: 16px;
+  }
+
+  /* ---------- Cards / Inputs ---------- */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 16px; }
+  .card-title {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  .card-sub { font-size: 13px; color: var(--ink-mute); margin: 0 0 14px; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 520px) {
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 600;
+  }
+  .num-input {
+    display: flex;
+    align-items: center;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .num-input button {
+    background: transparent;
+    border: 0;
+    width: 40px;
+    height: 48px;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--ink-soft);
+    font-family: inherit;
+  }
+  .num-input button:hover { background: var(--line-soft); color: var(--ink); }
+  .num-input input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--ink);
+    width: 100%;
+    min-width: 0;
+    -moz-appearance: textfield;
+  }
+  .num-input input::-webkit-outer-spin-button,
+  .num-input input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  input[type="text"].text-input {
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    width: 100%;
+    transition: border-color .15s, background .15s;
+  }
+  input[type="text"].text-input:focus {
+    outline: none;
+    border-color: var(--ink);
+    background: var(--paper);
+  }
+
+  .btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform .08s, background .15s, color .15s, box-shadow .15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--lime);
+    box-shadow: 0 4px 0 var(--court-deep);
+  }
+  .btn-primary:hover { background: var(--court-deep); }
+  .btn-primary:disabled {
+    background: var(--ink-mute);
+    color: var(--bg);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover { color: var(--ink); border-color: var(--ink); }
+  .btn-block { width: 100%; }
+  .btn-lg { padding: 18px 22px; font-size: 17px; }
+
+  /* ---------- Recommendation panel ---------- */
+  .reco {
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: var(--radius);
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .reco::after {
+    content: "";
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 160px; height: 160px;
+    background: var(--court);
+    border-radius: 50%;
+    opacity: 0.4;
+    filter: blur(20px);
+  }
+  .reco-label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--lime);
+    font-weight: 600;
+    position: relative;
+  }
+  .reco-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+    position: relative;
+  }
+  .reco-stat-num {
+    font-family: "Bricolage Grotesque", serif;
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .reco-stat-label {
+    font-size: 11px;
+    color: rgba(244, 239, 228, 0.6);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .reco-hint {
+    font-size: 13px;
+    color: rgba(244, 239, 228, 0.7);
+    margin-top: 16px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  /* ---------- Player list ---------- */
+  .players-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+  }
+  .player-num {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--ink-mute);
+    font-size: 13px;
+    width: 22px;
+    text-align: right;
+  }
+  .player-name {
+    flex: 1;
+    font-weight: 500;
+  }
+  .player-del {
+    background: transparent;
+    border: 0;
+    color: var(--ink-mute);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+  }
+  .player-del:hover { color: var(--coral); background: rgba(217, 79, 55, 0.08); }
+
+  .add-row { display: flex; gap: 8px; margin-top: 12px; }
+  .add-row .text-input { flex: 1; }
+  .add-row .btn { padding: 0 18px; }
+
+  /* ---------- Tournament screen ---------- */
+  .round-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .round-num {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    font-size: clamp(48px, 12vw, 88px);
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+  }
+  .round-num .of {
+    color: var(--ink-mute);
+    font-size: 0.4em;
+    letter-spacing: 0;
+  }
+  .round-meta {
+    text-align: right;
+    color: var(--ink-soft);
+    font-size: 13px;
+  }
+  .round-meta strong { color: var(--ink); font-weight: 600; }
+
+  .court-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .court-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--court);
+  }
+  .court-label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--court);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .match {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .team {
+    background: var(--bg-elev);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .team-names {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .team-names .amp {
+    color: var(--ink-mute);
+    margin: 0 4px;
+    font-weight: 400;
+  }
+  .vs {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-mute);
+    letter-spacing: 0.2em;
+    font-weight: 600;
+  }
+  .score-input {
+    margin-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+  }
+  .score-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .score-num button {
+    background: transparent;
+    border: 0;
+    width: 36px;
+    height: 56px;
+    cursor: pointer;
+    font-size: 22px;
+    color: var(--ink-soft);
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .score-num button:hover { background: var(--line-soft); color: var(--ink); }
+  .score-num input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    text-align: center;
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700;
+    font-size: 26px;
+    color: var(--ink);
+    -moz-appearance: textfield;
+    padding: 0;
+  }
+  .score-num input::-webkit-outer-spin-button,
+  .score-num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .dash {
+    font-family: "Bricolage Grotesque", serif;
+    font-size: 22px;
+    color: var(--ink-mute);
+  }
+  .team.winner {
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+  .team.winner .team-names { color: var(--lime); }
+  .team.winner .team-names .amp { color: rgba(197, 252, 91, 0.5); }
+
+  .resting {
+    background: var(--bg-elev);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .resting-label {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 600;
+  }
+  .resting-names {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- Standings ---------- */
+  .standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+  }
+  .standings-table th {
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .standings-table th.num { text-align: right; }
+  .standings-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 15px;
+  }
+  .standings-table td.num {
+    text-align: right;
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 600;
+  }
+  .standings-table tr:last-child td { border-bottom: 0; }
+  .rank {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    color: var(--ink-mute);
+    font-size: 18px;
+    width: 36px;
+  }
+  .standings-table tr.top1 .rank { color: var(--gold); }
+  .standings-table tr.top1 td:nth-child(2) { font-weight: 600; }
+  .standings-table .player-cell {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .pts-big {
+    font-family: "Bricolage Grotesque", serif;
+    font-size: 22px !important;
+    color: var(--ink);
+  }
+
+  /* ---------- Tabs / nav ---------- */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 18px;
+  }
+  .tab {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .tab.active {
+    background: var(--ink);
+    color: var(--lime);
+  }
+
+  /* ---------- Empty state & misc ---------- */
+  .empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--ink-mute);
+  }
+  .footer-nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .badge {
+    display: inline-block;
+    background: var(--court);
+    color: var(--bg);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--lime);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity .2s, transform .2s;
+    pointer-events: none;
+    z-index: 50;
+    box-shadow: 0 8px 24px -8px rgba(14, 20, 16, 0.4);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .modal-back {
+    position: fixed; inset: 0;
+    background: rgba(14, 20, 16, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 60;
+  }
+  .modal-back.show { display: flex; }
+  .modal {
+    background: var(--paper);
+    border-radius: var(--radius);
+    max-width: 380px;
+    width: 100%;
+    padding: 24px;
+    box-shadow: 0 24px 48px -16px rgba(14, 20, 16, 0.4);
+  }
+  .modal h3 {
+    font-family: "Bricolage Grotesque", serif;
+    margin: 0 0 8px;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+  .modal p { color: var(--ink-soft); margin: 0 0 18px; font-size: 14px; }
+  .modal-actions { display: flex; gap: 8px; }
+  .modal-actions .btn { flex: 1; }
+
+  @media (max-width: 520px) {
+    .app { padding: 16px 14px 80px; }
+    .card { padding: 16px; }
+    .match { grid-template-columns: 1fr; gap: 8px; }
+    .vs { text-align: center; padding: 4px 0; }
+    .round-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .round-meta { text-align: left; }
+    .score-num button { width: 34px; height: 52px; }
+    .score-num input { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">Americano</div>
+        <div class="brand-sub">Padel · Tournament</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btn-reset" title="Сбросить турнир" aria-label="Сбросить">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============ SETUP ============ -->
+  <section id="screen-setup" class="screen active">
+    <span class="eyebrow">Шаг 1 · Настройки</span>
+    <h1 class="title">Спланируй <em>Американо</em> за минуту.</h1>
+    <p class="lede">Введи число игроков, кортов и доступное время — приложение само подберёт формат и сгенерирует пары без повторов.</p>
+
+    <div class="card">
+      <h2 class="card-title">Параметры турнира</h2>
+      <p class="card-sub">Минимум 4 игрока. Чем больше игроков — тем интереснее ротация.</p>
+      <div class="grid-3">
+        <div class="field">
+          <span class="label">Игроки</span>
+          <div class="num-input">
+            <button data-step="-1" data-target="cfg-players">−</button>
+            <input id="cfg-players" type="number" min="4" max="40" value="8" inputmode="numeric" />
+            <button data-step="1" data-target="cfg-players">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Корты</span>
+          <div class="num-input">
+            <button data-step="-1" data-target="cfg-courts">−</button>
+            <input id="cfg-courts" type="number" min="1" max="10" value="2" inputmode="numeric" />
+            <button data-step="1" data-target="cfg-courts">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Время, мин</span>
+          <div class="num-input">
+            <button data-step="-15" data-target="cfg-time">−</button>
+            <input id="cfg-time" type="number" min="30" max="600" step="15" value="120" inputmode="numeric" />
+            <button data-step="15" data-target="cfg-time">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Рекомендуемый формат</h2>
+      <p class="card-sub">На основе твоих параметров. Можно подкрутить руками.</p>
+      <div class="reco">
+        <div class="reco-label">Predicted Format</div>
+        <div class="reco-stats">
+          <div>
+            <div class="reco-stat-num mono" id="reco-rounds">—</div>
+            <div class="reco-stat-label">Раундов</div>
+          </div>
+          <div>
+            <div class="reco-stat-num mono" id="reco-points">—</div>
+            <div class="reco-stat-label">Очков / матч</div>
+          </div>
+          <div>
+            <div class="reco-stat-num mono" id="reco-games">—</div>
+            <div class="reco-stat-label">Игр на чел.</div>
+          </div>
+        </div>
+        <div class="reco-hint" id="reco-hint">Каждый матч играется до фикс. суммы очков (24 = 16 : 8, и т. п.). Победители получают больше, общий итог — фиксирован.</div>
+      </div>
+
+      <div class="grid-2" style="margin-top:14px;">
+        <div class="field">
+          <span class="label">Раунды (вручную)</span>
+          <div class="num-input">
+            <button data-step="-1" data-target="cfg-rounds">−</button>
+            <input id="cfg-rounds" type="number" min="1" max="40" value="8" inputmode="numeric" />
+            <button data-step="1" data-target="cfg-rounds">+</button>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Очки / матч</span>
+          <div class="num-input">
+            <button data-step="-2" data-target="cfg-target">−</button>
+            <input id="cfg-target" type="number" min="6" max="64" step="2" value="24" inputmode="numeric" />
+            <button data-step="2" data-target="cfg-target">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-nav">
+      <button class="btn btn-primary btn-lg btn-block" id="go-players">Дальше: игроки →</button>
+    </div>
+  </section>
+
+  <!-- ============ PLAYERS ============ -->
+  <section id="screen-players" class="screen">
+    <span class="eyebrow">Шаг 2 · Состав</span>
+    <h1 class="title">Кто <em>выходит</em> на корт?</h1>
+    <p class="lede">Добавь всех участников. Каждый набирает очки лично — в Американо побеждает игрок, а не команда.</p>
+
+    <div class="card">
+      <div style="display:flex; justify-content: space-between; align-items: baseline;">
+        <h2 class="card-title">Список игроков</h2>
+        <span class="badge mono" id="players-count">0 / 8</span>
+      </div>
+      <div class="add-row">
+        <input id="new-player-name" class="text-input" type="text" placeholder="Имя игрока" maxlength="32" autocomplete="off" />
+        <button class="btn btn-primary" id="add-player">Добавить</button>
+      </div>
+      <div class="players-list" id="players-list">
+        <div class="empty">Пока никого. Добавь первого игрока ↑</div>
+      </div>
+    </div>
+
+    <div class="footer-nav">
+      <button class="btn btn-ghost" id="back-setup">← Назад</button>
+      <button class="btn btn-primary btn-block" id="go-tournament" disabled>Начать турнир →</button>
+    </div>
+  </section>
+
+  <!-- ============ TOURNAMENT ============ -->
+  <section id="screen-tournament" class="screen">
+    <div class="tabs">
+      <button class="tab active" data-tab="round">Раунд</button>
+      <button class="tab" data-tab="standings">Таблица</button>
+    </div>
+
+    <!-- Round tab -->
+    <div id="tab-round">
+      <div class="round-head">
+        <div class="round-num">
+          <span id="t-round-current">1</span><span class="of"> / <span id="t-round-total">8</span></span>
+        </div>
+        <div class="round-meta">
+          <div>До <strong id="t-target">24</strong> очков · <strong id="t-courts">2</strong> корт(а)</div>
+          <div id="t-progress" style="margin-top:4px;">Матчей сыграно: 0 из 0</div>
+        </div>
+      </div>
+
+      <div id="t-courts-list"></div>
+      <div id="t-resting"></div>
+
+      <div class="footer-nav">
+        <button class="btn btn-ghost" id="btn-prev-round" disabled>← Раунд назад</button>
+        <button class="btn btn-primary btn-block" id="btn-next-round" disabled>Следующий раунд →</button>
+      </div>
+    </div>
+
+    <!-- Standings tab -->
+    <div id="tab-standings" style="display:none;">
+      <span class="eyebrow">Таблица</span>
+      <h1 class="title" style="font-size:clamp(28px,5vw,40px); margin-bottom:18px;">Текущий <em>зачёт</em></h1>
+      <div class="card">
+        <table class="standings-table" id="standings-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Игрок</th>
+              <th class="num">Игр</th>
+              <th class="num">Поб.</th>
+              <th class="num">Очки</th>
+            </tr>
+          </thead>
+          <tbody id="standings-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast">Сохранено</div>
+
+<div class="modal-back" id="modal-reset">
+  <div class="modal">
+    <h3>Сбросить турнир?</h3>
+    <p>Все игроки, раунды и счёт будут удалены. Это действие нельзя отменить.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancel">Нет</button>
+      <button class="btn btn-primary" id="modal-confirm">Да, сбросить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====================================================================
+   AMERICANO PADEL · all logic in one file
+   ==================================================================== */
+
+const STORAGE_KEY = 'americano_padel_v1';
+
+const state = {
+  screen: 'setup',
+  config: {
+    players: 8,
+    courts: 2,
+    timeMin: 120,
+    rounds: 8,
+    target: 24,
+  },
+  players: [],   // [{ id, name }]
+  rounds: [],    // [{ matches: [{court, team1:[id,id], team2:[id,id], score1, score2}], resters: [id] }]
+  history: {
+    partnerCount: {}, // partnerCount[a][b] = n
+    opponentCount: {},
+    restCount: {},
+  },
+  currentRound: 0,
+};
+
+/* ---------- Persistence ---------- */
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      screen: state.screen,
+      config: state.config,
+      players: state.players,
+      rounds: state.rounds,
+      history: state.history,
+      currentRound: state.currentRound,
+    }));
+  } catch (e) { console.warn('save failed', e); }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    Object.assign(state, data);
+    return true;
+  } catch (e) { return false; }
+}
+
+/* ---------- Helpers ---------- */
+function $(id) { return document.getElementById(id); }
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function getPlayer(id) { return state.players.find(p => p.id === id); }
+function pairKey(a, b) { return a < b ? `${a}|${b}` : `${b}|${a}`; }
+function bump(map, a, b) {
+  if (!map[a]) map[a] = {};
+  if (!map[b]) map[b] = {};
+  map[a][b] = (map[a][b] || 0) + 1;
+  map[b][a] = (map[b][a] || 0) + 1;
+}
+function getCount(map, a, b) {
+  return (map[a] && map[a][b]) || 0;
+}
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ---------- Format recommendation ---------- */
+/* Strategy: estimate round duration from "points per match",
+   assuming ~30 sec per point + 2 min transitions between rounds.
+   Try several target-point levels, pick one that gives reasonable rounds (5-12)
+   and maximizes games per player without exceeding time. */
+function recommendFormat(N, C, T) {
+  N = Math.max(4, N|0);
+  C = Math.max(1, Math.min(C|0, Math.floor(N / 4) || 1));
+  T = Math.max(30, T|0);
+
+  const candidates = [16, 21, 24, 28, 32];
+  const transition = 2; // minutes between rounds (gather, switch, drinks)
+  let best = null;
+
+  for (const pts of candidates) {
+    const roundMin = pts * 0.5 + 2; // ~30 sec per point + 2 min margin
+    const rounds = Math.floor((T + transition) / (roundMin + transition));
+    if (rounds < 3) continue; // too few rounds
+    const playPerRound = Math.min(N, C * 4);
+    const totalSlots = rounds * playPerRound;
+    const gamesPerPlayer = totalSlots / N;
+
+    // score: prefer ~7-10 rounds, gamesPerPlayer >= 4
+    let score = 0;
+    score += Math.min(rounds, 12);
+    score += gamesPerPlayer * 1.5;
+    if (rounds < 5) score -= 5;
+    if (rounds > 14) score -= (rounds - 14);
+
+    if (!best || score > best.score) {
+      best = { rounds, points: pts, gamesPerPlayer, score, roundMin };
+    }
+  }
+
+  if (!best) {
+    // fallback
+    best = { rounds: 6, points: 24, gamesPerPlayer: (6 * Math.min(N, C*4)) / N, roundMin: 14 };
+  }
+  return best;
+}
+
+/* ---------- Round generation ---------- */
+/* Generates one round: chooses resters (those who rested least), then
+   tries multiple random pairings of playing players and picks the one
+   with minimal repeated-partnership/opponent cost. */
+function generateRound() {
+  const N = state.players.length;
+  const C = Math.max(1, Math.min(state.config.courts, Math.floor(N / 4)));
+  const playingCount = Math.min(N, C * 4);
+  const restingCount = N - playingCount;
+
+  // Sort by rest count ascending, random tiebreak
+  const sortedByRest = [...state.players].sort((a, b) => {
+    const ra = state.history.restCount[a.id] || 0;
+    const rb = state.history.restCount[b.id] || 0;
+    if (ra !== rb) return ra - rb;
+    return Math.random() - 0.5;
+  });
+  // Those with highest restCount get to play first; resters are those with lowest rest count... wait, we want fairness:
+  // those who rested least should play, those who rested most should also play eventually...
+  // actually the goal: equalize rest counts. So pick resters from those with LOWEST restCount so far? No.
+  // The fair way: those who rested LEAST so far should play LESS often this round? No.
+  // CORRECT: those who rested LEAST so far should be PRIORITIZED to rest now? No, they're already ahead in playing.
+  // We want everyone to rest the same number of times eventually.
+  // If A has restCount=0 and B has restCount=2, then B should play and A should rest THIS round.
+  // So: resters = those with the LOWEST restCount (they haven't rested yet — wait that means they played all rounds).
+  // Hmm let me re-think. restCount = "how many times this player has rested".
+  // To equalize, we want to PICK as resters those with the SMALLEST restCount.
+  // Yes — they haven't rested yet, so it's their turn to rest. The above sort is correct (ascending).
+  const resters = sortedByRest.slice(0, restingCount);
+  const playing = sortedByRest.slice(restingCount);
+
+  // Try multiple shuffles, pick best (least repeats)
+  let bestMatches = null;
+  let bestScore = Infinity;
+  const attempts = 200;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const shuffled = shuffle(playing);
+    const matches = [];
+    let cost = 0;
+
+    for (let i = 0; i < shuffled.length; i += 4) {
+      const a = shuffled[i], b = shuffled[i+1], c = shuffled[i+2], d = shuffled[i+3];
+      // Try the 3 ways to pair within a quartet, pick least-cost
+      const options = [
+        { t1: [a,b], t2: [c,d] },
+        { t1: [a,c], t2: [b,d] },
+        { t1: [a,d], t2: [b,c] },
+      ];
+      let bestOpt = null, bestOptCost = Infinity;
+      for (const opt of options) {
+        const c1 = getCount(state.history.partnerCount, opt.t1[0].id, opt.t1[1].id) * 4;
+        const c2 = getCount(state.history.partnerCount, opt.t2[0].id, opt.t2[1].id) * 4;
+        let opCost = 0;
+        for (const p1 of opt.t1) {
+          for (const p2 of opt.t2) {
+            opCost += getCount(state.history.opponentCount, p1.id, p2.id);
+          }
+        }
+        const total = c1 + c2 + opCost;
+        if (total < bestOptCost) { bestOptCost = total; bestOpt = opt; }
+      }
+      cost += bestOptCost;
+      matches.push({
+        court: (i / 4) + 1,
+        team1: [bestOpt.t1[0].id, bestOpt.t1[1].id],
+        team2: [bestOpt.t2[0].id, bestOpt.t2[1].id],
+        score1: null,
+        score2: null,
+      });
+    }
+
+    if (cost < bestScore) {
+      bestScore = cost;
+      bestMatches = matches;
+      if (cost === 0) break;
+    }
+  }
+
+  return {
+    matches: bestMatches,
+    resters: resters.map(p => p.id),
+  };
+}
+
+/* Commit round results to history (called when moving to next round) */
+function commitRoundToHistory(round) {
+  for (const m of round.matches) {
+    bump(state.history.partnerCount, m.team1[0], m.team1[1]);
+    bump(state.history.partnerCount, m.team2[0], m.team2[1]);
+    for (const p1 of m.team1) for (const p2 of m.team2) {
+      bump(state.history.opponentCount, p1, p2);
+    }
+  }
+  for (const id of round.resters) {
+    state.history.restCount[id] = (state.history.restCount[id] || 0) + 1;
+  }
+}
+
+/* Rebuild history from scratch (used when going back / on resume) */
+function rebuildHistory() {
+  state.history = { partnerCount: {}, opponentCount: {}, restCount: {} };
+  for (let i = 0; i < state.currentRound; i++) {
+    commitRoundToHistory(state.rounds[i]);
+  }
+}
+
+/* ---------- Standings ---------- */
+function computeStandings() {
+  const stats = {};
+  for (const p of state.players) {
+    stats[p.id] = { id: p.id, name: p.name, games: 0, wins: 0, points: 0 };
+  }
+  for (let i = 0; i < state.rounds.length; i++) {
+    const r = state.rounds[i];
+    for (const m of r.matches) {
+      if (m.score1 == null || m.score2 == null) continue;
+      const t1won = m.score1 > m.score2;
+      const t2won = m.score2 > m.score1;
+      for (const pid of m.team1) {
+        if (!stats[pid]) continue;
+        stats[pid].games += 1;
+        stats[pid].points += m.score1;
+        if (t1won) stats[pid].wins += 1;
+      }
+      for (const pid of m.team2) {
+        if (!stats[pid]) continue;
+        stats[pid].games += 1;
+        stats[pid].points += m.score2;
+        if (t2won) stats[pid].wins += 1;
+      }
+    }
+  }
+  return Object.values(stats).sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    return a.name.localeCompare(b.name, 'ru');
+  });
+}
+
+/* ====================================================================
+   RENDERING
+   ==================================================================== */
+
+function showScreen(name) {
+  state.screen = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + name).classList.add('active');
+  save();
+}
+
+function renderRecommendation() {
+  const N = parseInt($('cfg-players').value, 10) || 0;
+  const C = parseInt($('cfg-courts').value, 10) || 1;
+  const T = parseInt($('cfg-time').value, 10) || 60;
+
+  if (N < 4) {
+    $('reco-rounds').textContent = '—';
+    $('reco-points').textContent = '—';
+    $('reco-games').textContent = '—';
+    $('reco-hint').textContent = 'Нужно минимум 4 игрока.';
+    return;
+  }
+
+  const r = recommendFormat(N, C, T);
+  $('reco-rounds').textContent = r.rounds;
+  $('reco-points').textContent = r.points;
+  $('reco-games').textContent = r.gamesPerPlayer.toFixed(1);
+
+  const effC = Math.max(1, Math.min(C, Math.floor(N / 4)));
+  const ignored = C > effC ? ` (фактически задействовано ${effC} — для ${N} игроков больше не нужно)` : '';
+  const restCount = N - Math.min(N, effC * 4);
+  const restHint = restCount > 0 ? ` В каждом раунде ${restCount} игрок(ов) отдыхает — алгоритм распределяет это поровну.` : '';
+
+  $('reco-hint').textContent =
+    `Раунд ≈ ${Math.round(r.roundMin)} мин: каждый матч до ${r.points} очков (например 16:8 или 13:11).${ignored}${restHint}`;
+
+  // suggest values into manual fields if user hasn't touched them yet
+  if (!state._manualTouched) {
+    $('cfg-rounds').value = r.rounds;
+    $('cfg-target').value = r.points;
+  }
+}
+
+function renderPlayers() {
+  const list = $('players-list');
+  const cfgN = state.config.players;
+  $('players-count').textContent = `${state.players.length} / ${cfgN}`;
+  if (state.players.length === 0) {
+    list.innerHTML = '<div class="empty">Пока никого. Добавь первого игрока ↑</div>';
+  } else {
+    list.innerHTML = state.players.map((p, i) => `
+      <div class="player-row">
+        <span class="player-num mono">${String(i + 1).padStart(2, '0')}</span>
+        <span class="player-name">${escapeHtml(p.name)}</span>
+        <button class="player-del" data-del="${p.id}" aria-label="Удалить">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+    `).join('');
+  }
+  // enable start button when >= 4 players
+  $('go-tournament').disabled = state.players.length < 4;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function renderTournament() {
+  $('t-round-current').textContent = state.currentRound + 1;
+  $('t-round-total').textContent = state.config.rounds;
+  $('t-target').textContent = state.config.target;
+  $('t-courts').textContent = Math.max(1, Math.min(state.config.courts, Math.floor(state.players.length / 4)));
+
+  const round = state.rounds[state.currentRound];
+  if (!round) {
+    $('t-courts-list').innerHTML = '<div class="empty">Раунд не сгенерирован.</div>';
+    return;
+  }
+
+  const target = state.config.target;
+  let played = 0;
+  const html = round.matches.map((m) => {
+    const t1Names = m.team1.map(id => getPlayer(id)?.name || '?');
+    const t2Names = m.team2.map(id => getPlayer(id)?.name || '?');
+    const t1Win = m.score1 != null && m.score2 != null && m.score1 > m.score2;
+    const t2Win = m.score1 != null && m.score2 != null && m.score2 > m.score1;
+    if (m.score1 != null && m.score2 != null) played++;
+    return `
+      <div class="court-card">
+        <div class="court-label">Корт ${m.court}</div>
+        <div class="match">
+          <div class="team ${t1Win ? 'winner' : ''}">
+            <div class="team-names">${escapeHtml(t1Names[0])}<span class="amp">&</span>${escapeHtml(t1Names[1])}</div>
+          </div>
+          <div class="vs">VS</div>
+          <div class="team ${t2Win ? 'winner' : ''}">
+            <div class="team-names">${escapeHtml(t2Names[0])}<span class="amp">&</span>${escapeHtml(t2Names[1])}</div>
+          </div>
+        </div>
+        <div class="score-input">
+          <div class="score-num">
+            <button data-score-step="-1" data-match-court="${m.court}" data-team="1">−</button>
+            <input type="number" min="0" max="${target}" value="${m.score1 ?? ''}" data-match-court="${m.court}" data-team="1" inputmode="numeric" placeholder="0" />
+            <button data-score-step="1" data-match-court="${m.court}" data-team="1">+</button>
+          </div>
+          <span class="dash">—</span>
+          <div class="score-num">
+            <button data-score-step="-1" data-match-court="${m.court}" data-team="2">−</button>
+            <input type="number" min="0" max="${target}" value="${m.score2 ?? ''}" data-match-court="${m.court}" data-team="2" inputmode="numeric" placeholder="0" />
+            <button data-score-step="1" data-match-court="${m.court}" data-team="2">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  $('t-courts-list').innerHTML = html;
+
+  // resters
+  if (round.resters && round.resters.length > 0) {
+    const names = round.resters.map(id => getPlayer(id)?.name || '?').join(', ');
+    $('t-resting').innerHTML = `
+      <div class="resting">
+        <span class="resting-label">Отдыхают</span>
+        <span class="resting-names">${escapeHtml(names)}</span>
+      </div>
+    `;
+  } else {
+    $('t-resting').innerHTML = '';
+  }
+
+  $('t-progress').textContent = `Матчей сыграно: ${played} из ${round.matches.length}`;
+
+  // Button states
+  $('btn-prev-round').disabled = state.currentRound === 0;
+  const allFilled = round.matches.every(m => m.score1 != null && m.score2 != null);
+  const isLastRound = state.currentRound >= state.config.rounds - 1;
+  $('btn-next-round').disabled = !allFilled;
+  $('btn-next-round').textContent = isLastRound
+    ? 'Завершить турнир →'
+    : 'Следующий раунд →';
+}
+
+function renderStandings() {
+  const standings = computeStandings();
+  const tbody = $('standings-body');
+  if (standings.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Нет данных</td></tr>';
+    return;
+  }
+  tbody.innerHTML = standings.map((s, i) => `
+    <tr class="${i === 0 ? 'top1' : ''}">
+      <td class="rank">${i + 1}</td>
+      <td class="player-cell">${escapeHtml(s.name)}</td>
+      <td class="num">${s.games}</td>
+      <td class="num">${s.wins}</td>
+      <td class="num pts-big">${s.points}</td>
+    </tr>
+  `).join('');
+}
+
+/* ====================================================================
+   EVENT HANDLERS
+   ==================================================================== */
+
+// Numeric steppers
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-step]');
+  if (!btn) return;
+  const step = parseInt(btn.dataset.step, 10);
+  const target = $(btn.dataset.target);
+  if (!target) return;
+  const cur = parseInt(target.value, 10) || 0;
+  const min = parseInt(target.min, 10);
+  const max = parseInt(target.max, 10);
+  let next = cur + step;
+  if (!isNaN(min)) next = Math.max(min, next);
+  if (!isNaN(max)) next = Math.min(max, next);
+  target.value = next;
+  target.dispatchEvent(new Event('input', { bubbles: true }));
+});
+
+// Config inputs
+['cfg-players', 'cfg-courts', 'cfg-time'].forEach(id => {
+  $(id).addEventListener('input', () => {
+    state.config.players = parseInt($('cfg-players').value, 10) || 0;
+    state.config.courts = parseInt($('cfg-courts').value, 10) || 1;
+    state.config.timeMin = parseInt($('cfg-time').value, 10) || 60;
+    renderRecommendation();
+    save();
+  });
+});
+['cfg-rounds', 'cfg-target'].forEach(id => {
+  $(id).addEventListener('input', () => {
+    state._manualTouched = true;
+    state.config.rounds = parseInt($('cfg-rounds').value, 10) || 1;
+    state.config.target = parseInt($('cfg-target').value, 10) || 24;
+    save();
+  });
+});
+
+// Go to players
+$('go-players').addEventListener('click', () => {
+  state.config.players = parseInt($('cfg-players').value, 10);
+  state.config.courts = parseInt($('cfg-courts').value, 10);
+  state.config.timeMin = parseInt($('cfg-time').value, 10);
+  state.config.rounds = parseInt($('cfg-rounds').value, 10);
+  state.config.target = parseInt($('cfg-target').value, 10);
+  if (state.config.players < 4) {
+    showToast('Минимум 4 игрока');
+    return;
+  }
+  showScreen('players');
+  renderPlayers();
+});
+
+// Players
+$('add-player').addEventListener('click', addPlayer);
+$('new-player-name').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') addPlayer();
+});
+function addPlayer() {
+  const inp = $('new-player-name');
+  const name = inp.value.trim();
+  if (!name) return;
+  state.players.push({ id: uid(), name });
+  inp.value = '';
+  inp.focus();
+  renderPlayers();
+  save();
+}
+
+$('players-list').addEventListener('click', (e) => {
+  const del = e.target.closest('button[data-del]');
+  if (!del) return;
+  const id = del.dataset.del;
+  state.players = state.players.filter(p => p.id !== id);
+  renderPlayers();
+  save();
+});
+
+$('back-setup').addEventListener('click', () => showScreen('setup'));
+
+$('go-tournament').addEventListener('click', () => {
+  if (state.players.length < 4) {
+    showToast('Минимум 4 игрока');
+    return;
+  }
+  // Reset rounds and history
+  state.rounds = [];
+  state.history = { partnerCount: {}, opponentCount: {}, restCount: {} };
+  state.currentRound = 0;
+  const firstRound = generateRound();
+  state.rounds.push(firstRound);
+  showScreen('tournament');
+  renderTournament();
+  renderStandings();
+  save();
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    $('tab-round').style.display = which === 'round' ? '' : 'none';
+    $('tab-standings').style.display = which === 'standings' ? '' : 'none';
+    if (which === 'standings') renderStandings();
+  });
+});
+
+// Score inputs (delegated)
+$('t-courts-list').addEventListener('input', (e) => {
+  if (e.target.tagName !== 'INPUT') return;
+  const courtNum = parseInt(e.target.dataset.matchCourt, 10);
+  const team = e.target.dataset.team;
+  const round = state.rounds[state.currentRound];
+  const match = round.matches.find(m => m.court === courtNum);
+  if (!match) return;
+  let val = parseInt(e.target.value, 10);
+  if (isNaN(val)) val = null;
+  if (val != null) {
+    val = Math.max(0, Math.min(state.config.target, val));
+  }
+  if (team === '1') {
+    match.score1 = val;
+    // Auto-fill complementary if one side is set
+    if (val != null) {
+      match.score2 = state.config.target - val;
+    }
+  } else {
+    match.score2 = val;
+    if (val != null) {
+      match.score1 = state.config.target - val;
+    }
+  }
+  renderTournament();
+  renderStandings();
+  save();
+});
+$('t-courts-list').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-score-step]');
+  if (!btn) return;
+  const step = parseInt(btn.dataset.scoreStep, 10);
+  const courtNum = parseInt(btn.dataset.matchCourt, 10);
+  const team = btn.dataset.team;
+  const round = state.rounds[state.currentRound];
+  const match = round.matches.find(m => m.court === courtNum);
+  if (!match) return;
+  const target = state.config.target;
+  let cur = team === '1' ? (match.score1 ?? 0) : (match.score2 ?? 0);
+  let next = Math.max(0, Math.min(target, cur + step));
+  if (team === '1') { match.score1 = next; match.score2 = target - next; }
+  else { match.score2 = next; match.score1 = target - next; }
+  renderTournament();
+  renderStandings();
+  save();
+});
+
+// Round navigation
+$('btn-next-round').addEventListener('click', () => {
+  const round = state.rounds[state.currentRound];
+  if (!round.matches.every(m => m.score1 != null && m.score2 != null)) {
+    showToast('Заполни все счёты');
+    return;
+  }
+  // Commit current round to history
+  commitRoundToHistory(round);
+
+  const isLast = state.currentRound >= state.config.rounds - 1;
+  if (isLast) {
+    // switch to standings tab
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.tab[data-tab="standings"]').classList.add('active');
+    $('tab-round').style.display = 'none';
+    $('tab-standings').style.display = '';
+    renderStandings();
+    showToast('🏆 Турнир завершён');
+    save();
+    return;
+  }
+
+  state.currentRound++;
+  // Generate next round if not already present (rebuilding from past data)
+  if (!state.rounds[state.currentRound]) {
+    state.rounds.push(generateRound());
+  }
+  renderTournament();
+  renderStandings();
+  save();
+});
+
+$('btn-prev-round').addEventListener('click', () => {
+  if (state.currentRound === 0) return;
+  state.currentRound--;
+  // Rebuild history up to (but not including) this round
+  rebuildHistory();
+  renderTournament();
+  renderStandings();
+  save();
+});
+
+// Reset
+$('btn-reset').addEventListener('click', () => {
+  $('modal-reset').classList.add('show');
+});
+$('modal-cancel').addEventListener('click', () => $('modal-reset').classList.remove('show'));
+$('modal-confirm').addEventListener('click', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+/* ====================================================================
+   INIT
+   ==================================================================== */
+
+function init() {
+  const restored = load();
+  // Apply config to form
+  $('cfg-players').value = state.config.players;
+  $('cfg-courts').value = state.config.courts;
+  $('cfg-time').value = state.config.timeMin;
+  $('cfg-rounds').value = state.config.rounds;
+  $('cfg-target').value = state.config.target;
+  renderRecommendation();
+  renderPlayers();
+  if (restored && state.screen === 'tournament' && state.rounds.length > 0) {
+    rebuildHistory();
+    showScreen('tournament');
+    renderTournament();
+    renderStandings();
+  } else if (restored && state.screen === 'players') {
+    showScreen('players');
+    renderPlayers();
+  } else {
+    showScreen('setup');
+  }
+}
+init();
+</script>
+</body>
+</html>
