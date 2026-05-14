@@ -1223,46 +1223,39 @@ function showToast(msg) {
 }
 
 /* ---------- Format recommendation ---------- */
-/* Strategy: estimate round duration from "points per match",
-   assuming ~30 sec per point + 2 min transitions between rounds.
-   Try several target-point levels, pick one that gives reasonable rounds (5-12)
-   and maximizes games per player without exceeding time. */
+/* Strategy: fix rounds at N-1 (everyone-partners-everyone target for
+   the classic Americano with N/4 full courts), then pick the highest
+   points-per-match candidate whose total duration fits in T minutes. */
 function recommendFormat(N, C, T) {
   N = Math.max(4, N|0);
   C = Math.max(1, Math.min(C|0, Math.floor(N / 4) || 1));
   T = Math.max(30, T|0);
 
+  const rounds = N - 1;
   const candidates = [16, 21, 24, 28, 32];
   const transition = 2; // minutes between rounds (gather, switch, drinks)
-  let best = null;
 
+  // Pick the highest points value that fits N-1 rounds in T minutes.
+  // Total time ≈ rounds * roundMin + (rounds - 1) * transition.
+  let best = null;
   for (const pts of candidates) {
     const roundMin = pts * 0.5 + 2; // ~30 sec per point + 2 min margin
-    const rounds = Math.floor((T + transition) / (roundMin + transition));
-    if (rounds < 3) continue; // too few rounds
-    const playPerRound = Math.min(N, C * 4);
-    const totalSlots = rounds * playPerRound;
-    const gamesPerPlayer = totalSlots / N;
-
-    // score: prefer ~7-10 rounds, gamesPerPlayer >= 4
-    let score = 0;
-    score += Math.min(rounds, 12);
-    score += gamesPerPlayer * 1.5;
-    if (rounds < 5) score -= 5;
-    if (rounds > 14) score -= (rounds - 14);
-
-    if (!best || score > best.score) {
-      best = { rounds, points: pts, gamesPerPlayer, score, roundMin };
+    const totalTime = rounds * roundMin + Math.max(0, rounds - 1) * transition;
+    if (totalTime <= T) {
+      if (!best || pts > best.points) {
+        best = { rounds, points: pts, roundMin };
+      }
     }
   }
-
   if (!best) {
-    // fallback
-    best = { rounds: 6, points: 24, gamesPerPlayer: (6 * Math.min(N, C*4)) / N, roundMin: 14 };
+    // Even the smallest candidate doesn't fit — use it anyway and let
+    // the user widen the time field if they want longer matches.
+    const pts = candidates[0];
+    best = { rounds, points: pts, roundMin: pts * 0.5 + 2 };
   }
 
-  // Minimum rounds for "everyone partners everyone at least once":
-  // Each round produces 2*C partnerships; full coverage needs N*(N-1)/2.
+  const playPerRound = Math.min(N, C * 4);
+  best.gamesPerPlayer = (rounds * playPerRound) / N;
   best.fullRotationRounds = Math.ceil((N * (N - 1)) / (4 * C));
   return best;
 }
