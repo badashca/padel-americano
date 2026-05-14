@@ -672,6 +672,206 @@
   .modal-actions { display: flex; gap: 8px; }
   .modal-actions .btn { flex: 1; }
 
+  /* ---------- Share & History ---------- */
+  .share-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .share-bar .eyebrow { margin: 0; }
+  .btn-share {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .btn-share:hover { background: var(--ink); color: var(--lime); border-color: var(--ink); }
+  .btn-share svg { width: 14px; height: 14px; }
+
+  .history-round {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg-elev);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .history-round-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .history-round-num {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+  }
+  .history-round-rest {
+    font-size: 12px;
+    color: var(--ink-mute);
+  }
+  .history-match {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+  }
+  .history-match + .history-match { border-top: 1px dashed var(--line-soft); }
+  .h-team {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .h-team.right { text-align: right; }
+  .h-team .amp { color: var(--ink-mute); font-weight: 400; margin: 0 3px; }
+  .h-team.won { color: var(--court); }
+  .h-score {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .h-court-tag {
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .rotation-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .rotation-row {
+    background: var(--bg-elev);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .rotation-name {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .rotation-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .rotation-label {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 600;
+    min-width: 76px;
+    flex-shrink: 0;
+  }
+  .rotation-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 2px 9px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  .chip.partner { background: rgba(45, 94, 62, 0.08); border-color: rgba(45, 94, 62, 0.2); color: var(--court-deep); }
+  .chip.opp { color: var(--ink-soft); }
+  .chip .x {
+    color: var(--ink-mute);
+    margin-left: 3px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .shared-banner {
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .shared-banner-text {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .shared-banner-text strong { color: var(--lime); }
+  .shared-banner .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    background: var(--lime);
+    color: var(--ink);
+    box-shadow: none;
+  }
+  .shared-banner .btn:hover { background: #b0e848; }
+
+  .share-modal { max-width: 460px; }
+  .share-link-box {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .share-link-box input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--line);
+    background: var(--bg-elev);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  body[data-readonly="1"] .score-input {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  body[data-readonly="1"] .icon-btn#btn-reset {
+    display: none;
+  }
+
   @media (max-width: 520px) {
     .app { padding: 16px 14px 80px; }
     .card { padding: 16px; }
@@ -681,6 +881,9 @@
     .round-meta { text-align: left; }
     .score-num button { width: 34px; height: 52px; }
     .score-num input { font-size: 22px; }
+    .history-match { grid-template-columns: 1fr; gap: 4px; text-align: center; }
+    .h-team.right { text-align: center; }
+    .rotation-label { min-width: 0; }
   }
 </style>
 </head>
@@ -813,9 +1016,17 @@
 
   <!-- ============ TOURNAMENT ============ -->
   <section id="screen-tournament" class="screen">
+    <div id="shared-banner" class="shared-banner" style="display:none;">
+      <div class="shared-banner-text">
+        <strong>Просмотр турнира</strong> · ты видишь снимок результатов
+      </div>
+      <button class="btn" id="btn-new-tournament">Создать свой</button>
+    </div>
+
     <div class="tabs">
       <button class="tab active" data-tab="round">Раунд</button>
       <button class="tab" data-tab="standings">Таблица</button>
+      <button class="tab" data-tab="history">История</button>
     </div>
 
     <!-- Round tab -->
@@ -841,7 +1052,13 @@
 
     <!-- Standings tab -->
     <div id="tab-standings" style="display:none;">
-      <span class="eyebrow">Таблица</span>
+      <div class="share-bar">
+        <span class="eyebrow">Таблица</span>
+        <button class="btn-share" id="btn-share-standings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+          Поделиться
+        </button>
+      </div>
       <h1 class="title" style="font-size:clamp(28px,5vw,40px); margin-bottom:18px;">Текущий <em>зачёт</em></h1>
       <div class="card">
         <table class="standings-table" id="standings-table">
@@ -858,6 +1075,30 @@
         </table>
       </div>
     </div>
+
+    <!-- History tab -->
+    <div id="tab-history" style="display:none;">
+      <div class="share-bar">
+        <span class="eyebrow">История</span>
+        <button class="btn-share" id="btn-share-history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+          Поделиться
+        </button>
+      </div>
+      <h1 class="title" style="font-size:clamp(28px,5vw,40px); margin-bottom:18px;">Кто <em>с кем</em> играл</h1>
+
+      <div class="card">
+        <h2 class="card-title">По раундам</h2>
+        <p class="card-sub">Хронология всех матчей и составов команд.</p>
+        <div id="history-rounds"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Сводка ротации</h2>
+        <p class="card-sub">Для каждого игрока — с кем партнёрил, против кого играл и сколько раз отдыхал. Если цифры рядом с именами равномерные — ротация честная.</p>
+        <div id="history-rotation" class="rotation-grid"></div>
+      </div>
+    </div>
   </section>
 </div>
 
@@ -870,6 +1111,22 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" id="modal-cancel">Нет</button>
       <button class="btn btn-primary" id="modal-confirm">Да, сбросить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="modal-share">
+  <div class="modal share-modal">
+    <h3>Поделиться турниром</h3>
+    <p>Ссылка содержит весь снимок турнира — игроков, раунды и счёт. Получатель увидит то же, что видишь ты сейчас.</p>
+    <div class="share-link-box">
+      <input id="share-link-input" type="text" readonly />
+      <button class="btn btn-primary" id="share-copy-link">Копировать</button>
+    </div>
+    <p style="margin-top:14px; font-size:13px;">Или скопируй компактным текстом — удобно для чатов:</p>
+    <div class="modal-actions" style="margin-top:8px;">
+      <button class="btn btn-ghost" id="share-close">Закрыть</button>
+      <button class="btn btn-primary" id="share-copy-text">Копировать текстом</button>
     </div>
   </div>
 </div>
@@ -1405,7 +1662,9 @@ document.querySelectorAll('.tab').forEach(tab => {
     const which = tab.dataset.tab;
     $('tab-round').style.display = which === 'round' ? '' : 'none';
     $('tab-standings').style.display = which === 'standings' ? '' : 'none';
+    $('tab-history').style.display = which === 'history' ? '' : 'none';
     if (which === 'standings') renderStandings();
+    if (which === 'history') renderHistory();
   });
 });
 
@@ -1507,16 +1766,327 @@ $('btn-reset').addEventListener('click', () => {
 $('modal-cancel').addEventListener('click', () => $('modal-reset').classList.remove('show'));
 $('modal-confirm').addEventListener('click', () => {
   localStorage.removeItem(STORAGE_KEY);
+  // strip URL params too
+  history.replaceState(null, '', location.pathname);
   location.reload();
 });
+
+/* ====================================================================
+   HISTORY VIEW
+   ==================================================================== */
+
+function renderHistory() {
+  const roundsEl = $('history-rounds');
+  const rotEl = $('history-rotation');
+
+  // Determine which rounds to show: all completed + current if any scores entered
+  const roundsToShow = [];
+  for (let i = 0; i < state.rounds.length; i++) {
+    const r = state.rounds[i];
+    const hasAny = r.matches.some(m => m.score1 != null || m.score2 != null);
+    if (i < state.currentRound || hasAny) {
+      roundsToShow.push({ idx: i, round: r });
+    }
+  }
+
+  if (roundsToShow.length === 0) {
+    roundsEl.innerHTML = '<div class="empty">Пока ни одного сыгранного матча.</div>';
+  } else {
+    roundsEl.innerHTML = roundsToShow.map(({ idx, round }) => {
+      const restNames = round.resters && round.resters.length
+        ? round.resters.map(id => getPlayer(id)?.name || '?').join(', ')
+        : null;
+      const matches = round.matches.map(m => {
+        const t1 = m.team1.map(id => getPlayer(id)?.name || '?');
+        const t2 = m.team2.map(id => getPlayer(id)?.name || '?');
+        const t1Win = m.score1 != null && m.score2 != null && m.score1 > m.score2;
+        const t2Win = m.score1 != null && m.score2 != null && m.score2 > m.score1;
+        const scoreTxt = (m.score1 != null && m.score2 != null) ? `${m.score1} : ${m.score2}` : '— : —';
+        return `
+          <div>
+            <div class="h-court-tag">Корт ${m.court}</div>
+            <div class="history-match">
+              <div class="h-team ${t1Win ? 'won' : ''}">${escapeHtml(t1[0])}<span class="amp">&</span>${escapeHtml(t1[1])}</div>
+              <div class="h-score">${scoreTxt}</div>
+              <div class="h-team right ${t2Win ? 'won' : ''}">${escapeHtml(t2[0])}<span class="amp">&</span>${escapeHtml(t2[1])}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      return `
+        <div class="history-round">
+          <div class="history-round-head">
+            <div class="history-round-num">Раунд ${idx + 1}</div>
+            ${restNames ? `<div class="history-round-rest">Отдых: ${escapeHtml(restNames)}</div>` : ''}
+          </div>
+          ${matches}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Rotation summary
+  // Build partner/opponent/rest counts from all completed rounds (history state is current)
+  // But also include current round if has any committed scores? For verification let's use all rounds whose matches exist (state.rounds), counting partnerships regardless of score (the pairing itself is what we're verifying).
+  const partner = {};
+  const opp = {};
+  const rest = {};
+  for (const p of state.players) {
+    partner[p.id] = {};
+    opp[p.id] = {};
+    rest[p.id] = 0;
+  }
+  for (let i = 0; i <= state.currentRound && i < state.rounds.length; i++) {
+    const r = state.rounds[i];
+    for (const m of r.matches) {
+      partner[m.team1[0]][m.team1[1]] = (partner[m.team1[0]][m.team1[1]] || 0) + 1;
+      partner[m.team1[1]][m.team1[0]] = (partner[m.team1[1]][m.team1[0]] || 0) + 1;
+      partner[m.team2[0]][m.team2[1]] = (partner[m.team2[0]][m.team2[1]] || 0) + 1;
+      partner[m.team2[1]][m.team2[0]] = (partner[m.team2[1]][m.team2[0]] || 0) + 1;
+      for (const a of m.team1) for (const b of m.team2) {
+        opp[a][b] = (opp[a][b] || 0) + 1;
+        opp[b][a] = (opp[b][a] || 0) + 1;
+      }
+    }
+    for (const id of (r.resters || [])) {
+      rest[id] = (rest[id] || 0) + 1;
+    }
+  }
+
+  rotEl.innerHTML = state.players.map(p => {
+    const partners = Object.entries(partner[p.id] || {})
+      .filter(([_, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([id, c]) => {
+        const name = getPlayer(id)?.name || '?';
+        const cTag = c > 1 ? `<span class="x">×${c}</span>` : '';
+        return `<span class="chip partner">${escapeHtml(name)}${cTag}</span>`;
+      }).join('');
+    const opps = Object.entries(opp[p.id] || {})
+      .filter(([_, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([id, c]) => {
+        const name = getPlayer(id)?.name || '?';
+        const cTag = c > 1 ? `<span class="x">×${c}</span>` : '';
+        return `<span class="chip opp">${escapeHtml(name)}${cTag}</span>`;
+      }).join('');
+    return `
+      <div class="rotation-row">
+        <div class="rotation-name">${escapeHtml(p.name)}</div>
+        <div class="rotation-line">
+          <span class="rotation-label">Партнёры</span>
+          <span class="rotation-chips">${partners || '<span class="chip">—</span>'}</span>
+        </div>
+        <div class="rotation-line">
+          <span class="rotation-label">Соперники</span>
+          <span class="rotation-chips">${opps || '<span class="chip">—</span>'}</span>
+        </div>
+        <div class="rotation-line">
+          <span class="rotation-label">Отдых</span>
+          <span class="rotation-chips"><span class="chip">${rest[p.id] || 0} раз</span></span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ====================================================================
+   SHARING: encode/decode state to URL
+   ==================================================================== */
+
+function encodeShareState() {
+  // Compact representation using indices instead of UUIDs
+  const idx = {};
+  state.players.forEach((p, i) => { idx[p.id] = i; });
+
+  const compact = {
+    v: 1,
+    p: state.players.map(p => p.name),
+    c: {
+      r: state.config.rounds,
+      t: state.config.target,
+      ct: state.config.courts,
+    },
+    rd: state.rounds.map(round => ({
+      m: round.matches.map(m => [
+        idx[m.team1[0]], idx[m.team1[1]],
+        idx[m.team2[0]], idx[m.team2[1]],
+        m.score1, m.score2
+      ]),
+      x: (round.resters || []).map(id => idx[id]),
+    })),
+    n: state.currentRound,
+  };
+  const json = JSON.stringify(compact);
+  const b64 = btoa(unescape(encodeURIComponent(json)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return b64;
+}
+
+function decodeShareState(str) {
+  try {
+    let b = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    const json = decodeURIComponent(escape(atob(b)));
+    const d = JSON.parse(json);
+    if (!d || d.v !== 1) return null;
+
+    const players = d.p.map((name, i) => ({ id: 'r' + i, name }));
+    const rounds = d.rd.map(r => ({
+      matches: r.m.map((m, i) => ({
+        court: i + 1,
+        team1: [players[m[0]].id, players[m[1]].id],
+        team2: [players[m[2]].id, players[m[3]].id],
+        score1: m[4],
+        score2: m[5],
+      })),
+      resters: (r.x || []).map(i => players[i].id),
+    }));
+    return {
+      players,
+      config: {
+        players: players.length,
+        courts: d.c.ct,
+        timeMin: 120,
+        rounds: d.c.r,
+        target: d.c.t,
+      },
+      rounds,
+      currentRound: d.n,
+    };
+  } catch (e) {
+    console.warn('decode failed', e);
+    return null;
+  }
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Скопировано');
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); showToast('Скопировано'); }
+    catch { showToast('Не удалось скопировать'); }
+    document.body.removeChild(ta);
+  }
+}
+
+function buildShareLink() {
+  const encoded = encodeShareState();
+  const base = location.origin + location.pathname;
+  return base + '?t=' + encoded;
+}
+
+function buildShareText() {
+  const standings = computeStandings();
+  const completedRounds = Math.min(state.currentRound + 1, state.rounds.length);
+  const lines = [];
+  lines.push(`🎾 Падел · Американо`);
+  lines.push(`${state.players.length} игроков · ${completedRounds}/${state.config.rounds} раундов · до ${state.config.target} очков`);
+  lines.push('');
+  lines.push('🏆 Таблица:');
+  standings.forEach((s, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+    lines.push(`${medal} ${s.name} — ${s.points} (${s.wins}/${s.games})`);
+  });
+  return lines.join('\n');
+}
+
+function openShareModal() {
+  $('share-link-input').value = buildShareLink();
+  $('modal-share').classList.add('show');
+}
+
+$('btn-share-standings').addEventListener('click', openShareModal);
+$('btn-share-history').addEventListener('click', openShareModal);
+$('share-close').addEventListener('click', () => $('modal-share').classList.remove('show'));
+$('share-copy-link').addEventListener('click', () => {
+  copyText($('share-link-input').value);
+});
+$('share-copy-text').addEventListener('click', () => {
+  copyText(buildShareText());
+});
+$('share-link-input').addEventListener('focus', e => e.target.select());
+
+// Close share modal on backdrop click
+$('modal-share').addEventListener('click', e => {
+  if (e.target === $('modal-share')) $('modal-share').classList.remove('show');
+});
+
+/* ====================================================================
+   SHARED VIEW (read-only mode)
+   ==================================================================== */
+
+function enterSharedView(decoded) {
+  Object.assign(state, decoded);
+  state.history = { partnerCount: {}, opponentCount: {}, restCount: {} };
+  state._sharedView = true;
+
+  // Show banner, hide reset (use as exit)
+  $('shared-banner').style.display = '';
+
+  // Disable score editing — re-render runs on a flag
+  document.body.dataset.readonly = '1';
+
+  // Hide round navigation
+  $('btn-prev-round').style.display = 'none';
+  $('btn-next-round').style.display = 'none';
+
+  showScreen('tournament');
+  // Default to standings tab in shared view
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="standings"]').classList.add('active');
+  $('tab-round').style.display = 'none';
+  $('tab-standings').style.display = '';
+  $('tab-history').style.display = 'none';
+
+  renderTournament();
+  renderStandings();
+}
+
+$('btn-new-tournament').addEventListener('click', () => {
+  history.replaceState(null, '', location.pathname);
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+});
+
+// In read-only mode, swallow score input changes
+const _origScoreInput = $('t-courts-list');
+_origScoreInput.addEventListener('input', e => {
+  if (document.body.dataset.readonly === '1') { e.stopPropagation(); e.preventDefault(); }
+}, true);
+_origScoreInput.addEventListener('click', e => {
+  if (document.body.dataset.readonly === '1' && e.target.closest('button[data-score-step]')) {
+    e.stopPropagation(); e.preventDefault();
+  }
+}, true);
 
 /* ====================================================================
    INIT
    ==================================================================== */
 
 function init() {
+  // Check URL for shared state first
+  const urlParams = new URLSearchParams(location.search);
+  const sharedToken = urlParams.get('t');
+  if (sharedToken) {
+    const decoded = decodeShareState(sharedToken);
+    if (decoded && decoded.players && decoded.players.length > 0) {
+      enterSharedView(decoded);
+      return;
+    } else {
+      showToast('Ссылка повреждена');
+    }
+  }
+
   const restored = load();
-  // Apply config to form
   $('cfg-players').value = state.config.players;
   $('cfg-courts').value = state.config.courts;
   $('cfg-time').value = state.config.timeMin;
