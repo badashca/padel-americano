@@ -1432,8 +1432,12 @@ function renderRecommendation() {
   const restCount = N - Math.min(N, effC * 4);
   const restHint = restCount > 0 ? ` В каждом раунде ${restCount} игрок(ов) отдыхает — алгоритм распределяет это поровну.` : '';
 
+  // Generate two example scores that sum to r.points: one lopsided, one close
+  const lopA = Math.round(r.points * 2 / 3), lopB = r.points - lopA;
+  const closeA = Math.ceil((r.points + 1) / 2), closeB = r.points - closeA;
+
   $('reco-hint').textContent =
-    `Раунд ≈ ${Math.round(r.roundMin)} мин: каждый матч до ${r.points} очков (например 16:8 или 13:11).${ignored}${restHint}`;
+    `Раунд ≈ ${Math.round(r.roundMin)} мин: матч на ${r.points} очков суммарно (например ${lopA}:${lopB} или ${closeA}:${closeB}).${ignored}${restHint}`;
 
   // Extra info: full rotation rounds + "final fours" suggestion
   const fullRot = r.fullRotationRounds;
