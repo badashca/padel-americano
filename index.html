@@ -331,61 +331,6 @@
     line-height: 1.5;
   }
 
-  /* ---------- Preview screen (uses reco-stats on light card) ---------- */
-  #screen-preview .reco-stats { margin-top: 8px; }
-  #screen-preview .reco-stat-label { color: var(--ink-mute); }
-  .preview-badge.good { color: var(--court); font-weight: 600; }
-  .preview-badge.warn { color: var(--ink-soft); }
-  .preview-round {
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius-sm);
-    padding: 10px 12px;
-    margin-top: 8px;
-  }
-  .preview-round-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-  .preview-round-num {
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    font-weight: 700;
-  }
-  .preview-round-rest {
-    font-size: 11px;
-    color: var(--ink-mute);
-  }
-  .preview-match {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 8px;
-    align-items: center;
-    padding: 6px 0;
-    font-size: 13px;
-  }
-  .preview-match + .preview-match { border-top: 1px dashed var(--line-soft); }
-  .preview-match .court {
-    font-size: 10px;
-    color: var(--ink-mute);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    grid-column: 1 / -1;
-    margin-top: 2px;
-  }
-  .preview-team {
-    font-family: "Bricolage Grotesque", serif;
-    font-weight: 600;
-  }
-  .preview-team.right { text-align: right; }
-  .preview-team .amp { color: var(--ink-mute); font-weight: 400; margin: 0 3px; }
-  .preview-vs { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.16em; }
-
-
   /* ---------- Player list ---------- */
   .players-list {
     display: flex;
@@ -633,6 +578,10 @@
     font-weight: 600;
     letter-spacing: -0.01em;
   }
+  .standings-table .avg-cell {
+    color: var(--ink-mute);
+    font-size: 13px;
+  }
   .pts-big {
     font-family: "Bricolage Grotesque", serif;
     font-size: 22px !important;
@@ -806,8 +755,7 @@
   }
   .h-team.right { text-align: right; }
   .h-team .amp { color: var(--ink-mute); font-weight: 400; margin: 0 3px; }
-  .h-team.won { color: #22c55e; }
-  .h-team.won .amp { color: #22c55e; opacity: 0.6; }
+  .h-team.won { color: var(--court); }
   .h-score {
     font-family: "JetBrains Mono", monospace;
     font-weight: 700;
@@ -832,6 +780,52 @@
     grid-template-columns: 1fr;
     gap: 8px;
   }
+  .rotation-progress {
+    background: var(--bg-elev);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .rotation-progress-label {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    font-weight: 600;
+  }
+  .rotation-progress-value {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .rotation-progress-value small {
+    color: var(--ink-mute);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .rotation-progress-bar {
+    flex: 1;
+    min-width: 100px;
+    height: 8px;
+    background: var(--line-soft);
+    border-radius: 100px;
+    overflow: hidden;
+    position: relative;
+  }
+  .rotation-progress-fill {
+    height: 100%;
+    background: var(--court);
+    border-radius: 100px;
+    transition: width .4s ease;
+  }
+  .rotation-progress-fill.full { background: var(--lime); }
   .rotation-row {
     background: var(--bg-elev);
     border: 1px solid var(--line-soft);
@@ -1027,7 +1021,6 @@
           </div>
         </div>
         <div class="reco-hint" id="reco-hint">Каждый матч играется до фикс. суммы очков (24 = 16 : 8, и т. п.). Победители получают больше, общий итог — фиксирован.</div>
-        <div class="reco-hint" id="reco-extra"></div>
       </div>
 
       <div class="grid-2" style="margin-top:14px;">
@@ -1077,45 +1070,7 @@
 
     <div class="footer-nav">
       <button class="btn btn-ghost" id="back-setup">← Назад</button>
-      <button class="btn btn-primary btn-block" id="go-tournament" disabled>Дальше: расписание →</button>
-    </div>
-  </section>
-
-  <!-- ============ PREVIEW ============ -->
-  <section id="screen-preview" class="screen">
-    <span class="eyebrow">Шаг 3 · Расписание</span>
-    <h1 class="title">Кто <em>с кем</em> играет</h1>
-    <p class="lede">Посмотри пары перед стартом. Если ротация не нравится — перегенерируй.</p>
-
-    <div class="card">
-      <h2 class="card-title">Качество расписания</h2>
-      <div class="reco-stats">
-        <div>
-          <div class="reco-stat-num mono" id="preview-pairs">—</div>
-          <div class="reco-stat-label">Дубли партнёров</div>
-        </div>
-        <div>
-          <div class="reco-stat-num mono" id="preview-spread">—</div>
-          <div class="reco-stat-label">Разброс отдыха</div>
-        </div>
-        <div>
-          <div class="reco-stat-num mono" id="preview-opp-spread">—</div>
-          <div class="reco-stat-label">Дубли соперников</div>
-        </div>
-      </div>
-      <p class="card-sub" id="preview-badge" style="margin-top: 14px;"></p>
-    </div>
-
-    <div class="card">
-      <h2 class="card-title">Сводка ротации</h2>
-      <p class="card-sub">Для каждого игрока — с кем партнёрит, против кого играет и сколько раз отдыхает. ×2 у имени означает повторную пару.</p>
-      <div id="preview-rotation" class="rotation-grid"></div>
-    </div>
-
-    <div class="footer-nav">
-      <button class="btn btn-ghost" id="back-preview">← Назад</button>
-      <button class="btn btn-ghost" id="btn-regenerate">Перегенерировать</button>
-      <button class="btn btn-primary btn-block" id="btn-start-tournament">Начать турнир →</button>
+      <button class="btn btn-primary btn-block" id="go-tournament" disabled>Начать турнир →</button>
     </div>
   </section>
 
@@ -1173,6 +1128,7 @@
               <th>Игрок</th>
               <th class="num">Игр</th>
               <th class="num">Поб.</th>
+              <th class="num">Средн.</th>
               <th class="num">Очки</th>
             </tr>
           </thead>
@@ -1201,6 +1157,7 @@
       <div class="card">
         <h2 class="card-title">Сводка ротации</h2>
         <p class="card-sub">Для каждого игрока — с кем партнёрил, против кого играл и сколько раз отдыхал. Если цифры рядом с именами равномерные — ротация честная.</p>
+        <div id="rotation-progress" class="rotation-progress"></div>
         <div id="history-rotation" class="rotation-grid"></div>
       </div>
     </div>
@@ -1272,7 +1229,6 @@ function save() {
       rounds: state.rounds,
       history: state.history,
       currentRound: state.currentRound,
-      scheduleScore: state.scheduleScore,
     }));
   } catch (e) { console.warn('save failed', e); }
 }
@@ -1317,95 +1273,86 @@ function showToast(msg) {
 }
 
 /* ---------- Format recommendation ---------- */
-/* Strategy: rounds = ceil(N*(N-1)/(4C)) — minimum needed for every
-   pair to play at least once given C courts (2 partnerships/round
-   per court). Equals N-1 when N is divisible by 4 with full courts;
-   higher otherwise (e.g. N=10, C=2 → 12 rounds, not 9). Then pick
-   the highest points-per-match candidate whose total duration fits
-   in T minutes. */
+/* Strategy: estimate round duration from "points per match",
+   assuming ~30 sec per point + 2 min transitions between rounds.
+   Try several target-point levels, pick one that gives reasonable rounds (5-12)
+   and maximizes games per player without exceeding time. */
 function recommendFormat(N, C, T) {
   N = Math.max(4, N|0);
   C = Math.max(1, Math.min(C|0, Math.floor(N / 4) || 1));
   T = Math.max(30, T|0);
 
-  const fullRotationRounds = Math.ceil((N * (N - 1)) / (4 * C));
   const candidates = [16, 21, 24, 28, 32];
   const transition = 2; // minutes between rounds (gather, switch, drinks)
-
-  // First pass: try to fit full-rotation rounds at the highest points value
-  // that still respects T. Total time ≈ R * roundMin + (R - 1) * transition.
   let best = null;
+
   for (const pts of candidates) {
     const roundMin = pts * 0.5 + 2; // ~30 sec per point + 2 min margin
-    const totalTime = fullRotationRounds * roundMin + Math.max(0, fullRotationRounds - 1) * transition;
-    if (totalTime <= T) {
-      if (!best || pts > best.points) {
-        best = { rounds: fullRotationRounds, points: pts, roundMin };
-      }
+    const rounds = Math.floor((T + transition) / (roundMin + transition));
+    if (rounds < 3) continue; // too few rounds
+    const playPerRound = Math.min(N, C * 4);
+    const totalSlots = rounds * playPerRound;
+    const gamesPerPlayer = totalSlots / N;
+
+    // score: prefer ~7-10 rounds, gamesPerPlayer >= 4
+    let score = 0;
+    score += Math.min(rounds, 12);
+    score += gamesPerPlayer * 1.5;
+    if (rounds < 5) score -= 5;
+    if (rounds > 14) score -= (rounds - 14);
+
+    if (!best || score > best.score) {
+      best = { rounds, points: pts, gamesPerPlayer, score, roundMin };
     }
   }
 
-  // Fallback: even at minimum points (16) the full rotation won't fit.
-  // Keep matches short (16 pts) and reduce rounds to fit T — user can
-  // bump the time field if they want full coverage.
   if (!best) {
-    const pts = candidates[0];
-    const roundMin = pts * 0.5 + 2;
-    const fitRounds = Math.max(3, Math.floor((T + transition) / (roundMin + transition)));
-    const rounds = Math.min(fitRounds, fullRotationRounds);
-    best = { rounds, points: pts, roundMin };
+    // fallback
+    best = { rounds: 6, points: 24, gamesPerPlayer: (6 * Math.min(N, C*4)) / N, roundMin: 14 };
   }
-
-  const playPerRound = Math.min(N, C * 4);
-  best.gamesPerPlayer = (best.rounds * playPerRound) / N;
-  best.fullRotationRounds = fullRotationRounds;
   return best;
 }
 
-/* ---------- Round generation ---------- */
-/* Generates one round: chooses resters (those who rested least), then
-   tries multiple random pairings of playing players and picks the one
-   with minimal repeated-partnership/opponent cost. */
+/* ---------- Round generation (improved) ---------- */
+/* Strategy:
+   1. Pairs that haven't played yet get STRONG priority (cost factor 1000)
+      vs repeating opponents (cost factor 1). Pair repeats are heavily penalized.
+   2. Resters chosen from those who rested LEAST so far, but with a touch of
+      randomness so the algorithm doesn't get locked in.
+   3. Many attempts (1500) — pick the best result.
+*/
 function generateRound() {
   const N = state.players.length;
   const C = Math.max(1, Math.min(state.config.courts, Math.floor(N / 4)));
   const playingCount = Math.min(N, C * 4);
   const restingCount = N - playingCount;
 
-  // Sort by rest count ascending, random tiebreak
-  const sortedByRest = [...state.players].sort((a, b) => {
-    const ra = state.history.restCount[a.id] || 0;
-    const rb = state.history.restCount[b.id] || 0;
-    if (ra !== rb) return ra - rb;
-    return Math.random() - 0.5;
-  });
-  // Those with highest restCount get to play first; resters are those with lowest rest count... wait, we want fairness:
-  // those who rested least should play, those who rested most should also play eventually...
-  // actually the goal: equalize rest counts. So pick resters from those with LOWEST restCount so far? No.
-  // The fair way: those who rested LEAST so far should play LESS often this round? No.
-  // CORRECT: those who rested LEAST so far should be PRIORITIZED to rest now? No, they're already ahead in playing.
-  // We want everyone to rest the same number of times eventually.
-  // If A has restCount=0 and B has restCount=2, then B should play and A should rest THIS round.
-  // So: resters = those with the LOWEST restCount (they haven't rested yet — wait that means they played all rounds).
-  // Hmm let me re-think. restCount = "how many times this player has rested".
-  // To equalize, we want to PICK as resters those with the SMALLEST restCount.
-  // Yes — they haven't rested yet, so it's their turn to rest. The above sort is correct (ascending).
-  const resters = sortedByRest.slice(0, restingCount);
-  const playing = sortedByRest.slice(restingCount);
-
-  // Try multiple shuffles, pick best (least repeats)
   let bestMatches = null;
+  let bestRestersIds = null;
   let bestScore = Infinity;
-  const attempts = 200;
+  const attempts = 1500;
 
   for (let attempt = 0; attempt < attempts; attempt++) {
+    // Pick resters: weighted toward those who rested least, with some randomness
+    const candidatesForRest = state.players.map(p => ({
+      player: p,
+      rest: state.history.restCount[p.id] || 0,
+      jitter: Math.random()
+    }));
+    // Mostly sort by rest count, but with random tiebreaks AND occasional swap
+    candidatesForRest.sort((a, b) => {
+      if (a.rest !== b.rest) return a.rest - b.rest;
+      return a.jitter - b.jitter;
+    });
+    const resters = candidatesForRest.slice(0, restingCount).map(x => x.player);
+    const playing = candidatesForRest.slice(restingCount).map(x => x.player);
+
     const shuffled = shuffle(playing);
     const matches = [];
     let cost = 0;
 
     for (let i = 0; i < shuffled.length; i += 4) {
       const a = shuffled[i], b = shuffled[i+1], c = shuffled[i+2], d = shuffled[i+3];
-      // Try the 3 ways to pair within a quartet, pick least-cost
       const options = [
         { t1: [a,b], t2: [c,d] },
         { t1: [a,c], t2: [b,d] },
@@ -1413,15 +1360,16 @@ function generateRound() {
       ];
       let bestOpt = null, bestOptCost = Infinity;
       for (const opt of options) {
-        const c1 = getCount(state.history.partnerCount, opt.t1[0].id, opt.t1[1].id) * 4;
-        const c2 = getCount(state.history.partnerCount, opt.t2[0].id, opt.t2[1].id) * 4;
-        let opCost = 0;
+        // HEAVY penalty for repeated partnerships (1000), light for opponents (1)
+        const partnerCost1 = getCount(state.history.partnerCount, opt.t1[0].id, opt.t1[1].id) * 1000;
+        const partnerCost2 = getCount(state.history.partnerCount, opt.t2[0].id, opt.t2[1].id) * 1000;
+        let oppCost = 0;
         for (const p1 of opt.t1) {
           for (const p2 of opt.t2) {
-            opCost += getCount(state.history.opponentCount, p1.id, p2.id);
+            oppCost += getCount(state.history.opponentCount, p1.id, p2.id);
           }
         }
-        const total = c1 + c2 + opCost;
+        const total = partnerCost1 + partnerCost2 + oppCost;
         if (total < bestOptCost) { bestOptCost = total; bestOpt = opt; }
       }
       cost += bestOptCost;
@@ -1437,145 +1385,14 @@ function generateRound() {
     if (cost < bestScore) {
       bestScore = cost;
       bestMatches = matches;
-      if (cost === 0) break;
+      bestRestersIds = resters.map(p => p.id);
+      if (cost === 0) break; // perfect round found
     }
   }
 
   return {
     matches: bestMatches,
-    resters: resters.map(p => p.id),
-  };
-}
-
-/* ---------- Full-schedule planner ----------
-   Runs many attempts to generate a complete R-round schedule. Each
-   attempt builds the schedule round-by-round with greedy choices for
-   resters (lowest rest count first) and pairings (minimize repeated
-   partnerships and opponents). Across attempts we pick the schedule
-   that maximizes unique partner pairs, breaking ties by minimum rest
-   spread. */
-function planSchedule(players, C, R) {
-  const N = players.length;
-  if (R <= 0 || N < 4) return { rounds: [], score: { uniquePairs: 0, partnerDups: 0, restSpread: 0, opponentDups: 0, oppFloor: 0 } };
-
-  const ATTEMPTS = 1500;
-  let best = null;
-  let bestScore = null;
-
-  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-    const result = scheduleAttempt(players, C, R);
-    if (!bestScore || isBetterSchedule(result.score, bestScore)) {
-      best = result.rounds;
-      bestScore = result.score;
-    }
-  }
-  return { rounds: best, score: bestScore };
-}
-
-function isBetterSchedule(a, b) {
-  if (a.partnerDups !== b.partnerDups) return a.partnerDups < b.partnerDups;
-  if (a.restSpread !== b.restSpread) return a.restSpread < b.restSpread;
-  return a.opponentDups < b.opponentDups;
-}
-
-function scheduleAttempt(players, C, R) {
-  const N = players.length;
-  const playingCount = Math.min(N, C * 4);
-  const restingCount = N - playingCount;
-
-  // Local counts (don't touch state.history)
-  const partner = {};
-  const opponent = {};
-  const rest = {};
-  for (const p of players) {
-    partner[p.id] = {};
-    opponent[p.id] = {};
-    rest[p.id] = 0;
-  }
-  const pc = (a, b) => partner[a][b] || 0;
-  const oc = (a, b) => opponent[a][b] || 0;
-  const bumpPC = (a, b) => { partner[a][b] = pc(a,b) + 1; partner[b][a] = pc(b,a) + 1; };
-  const bumpOC = (a, b) => { opponent[a][b] = oc(a,b) + 1; opponent[b][a] = oc(b,a) + 1; };
-
-  const rounds = [];
-  for (let r = 0; r < R; r++) {
-    // Pick resters: lowest restCount first, random tiebreak
-    const sorted = [...players].sort((a, b) => {
-      const ra = rest[a.id], rb = rest[b.id];
-      if (ra !== rb) return ra - rb;
-      return Math.random() - 0.5;
-    });
-    const resters = sorted.slice(0, restingCount);
-    const playing = shuffle(sorted.slice(restingCount));
-
-    const matches = [];
-    for (let i = 0; i < playing.length; i += 4) {
-      const a = playing[i], b = playing[i+1], c = playing[i+2], d = playing[i+3];
-      const options = [
-        { t1: [a,b], t2: [c,d] },
-        { t1: [a,c], t2: [b,d] },
-        { t1: [a,d], t2: [b,c] },
-      ];
-      let bestOpt = options[0], bestCost = Infinity;
-      for (const opt of options) {
-        const cost = pc(opt.t1[0].id, opt.t1[1].id) * 4
-                   + pc(opt.t2[0].id, opt.t2[1].id) * 4
-                   + oc(opt.t1[0].id, opt.t2[0].id)
-                   + oc(opt.t1[0].id, opt.t2[1].id)
-                   + oc(opt.t1[1].id, opt.t2[0].id)
-                   + oc(opt.t1[1].id, opt.t2[1].id);
-        if (cost < bestCost) { bestCost = cost; bestOpt = opt; }
-      }
-      bumpPC(bestOpt.t1[0].id, bestOpt.t1[1].id);
-      bumpPC(bestOpt.t2[0].id, bestOpt.t2[1].id);
-      for (const p1 of bestOpt.t1) for (const p2 of bestOpt.t2) bumpOC(p1.id, p2.id);
-
-      matches.push({
-        court: (i/4) + 1,
-        team1: [bestOpt.t1[0].id, bestOpt.t1[1].id],
-        team2: [bestOpt.t2[0].id, bestOpt.t2[1].id],
-        score1: null,
-        score2: null,
-      });
-    }
-    for (const p of resters) rest[p.id]++;
-    rounds.push({ matches, resters: resters.map(p => p.id) });
-  }
-
-  // Score the resulting schedule.
-  // Pass 1: count unique partner pairs, partner duplicates, total opponent
-  // encounters (needed to compute opponent baseline).
-  let uniquePairs = 0;
-  let partnerDups = 0;
-  let totalOppEncounters = 0;
-  for (let i = 0; i < N; i++) {
-    for (let j = i+1; j < N; j++) {
-      const pCount = pc(players[i].id, players[j].id);
-      if (pCount > 0) uniquePairs++;
-      if (pCount > 1) partnerDups += pCount - 1;
-      totalOppEncounters += oc(players[i].id, players[j].id);
-    }
-  }
-  // Opponent baseline = how many times each pair "should" be opponents
-  // if encounters were perfectly even across all pairs.
-  const totalPairs = (N * (N - 1)) / 2;
-  const oppFloor = totalPairs > 0 ? Math.floor(totalOppEncounters / totalPairs) : 0;
-
-  // Pass 2: count opponent duplicates above the floor.
-  let opponentDups = 0;
-  for (let i = 0; i < N; i++) {
-    for (let j = i+1; j < N; j++) {
-      const oCount = oc(players[i].id, players[j].id);
-      if (oCount > oppFloor) opponentDups += oCount - oppFloor;
-    }
-  }
-
-  const rests = players.map(p => rest[p.id]);
-  const restSpread = Math.max(...rests) - Math.min(...rests);
-
-  return {
-    rounds,
-    score: { uniquePairs, partnerDups, restSpread, opponentDups, oppFloor }
+    resters: bestRestersIds || [],
   };
 }
 
@@ -1627,8 +1444,14 @@ function computeStandings() {
       }
     }
   }
+  // Compute average points per game (used for tiebreak when games differ)
+  for (const s of Object.values(stats)) {
+    s.avg = s.games > 0 ? s.points / s.games : 0;
+  }
   return Object.values(stats).sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
+    // Tiebreak: who has higher average points per game
+    if (b.avg !== a.avg) return b.avg - a.avg;
     if (b.wins !== a.wins) return b.wins - a.wins;
     return a.name.localeCompare(b.name, 'ru');
   });
@@ -1655,7 +1478,6 @@ function renderRecommendation() {
     $('reco-points').textContent = '—';
     $('reco-games').textContent = '—';
     $('reco-hint').textContent = 'Нужно минимум 4 игрока.';
-    $('reco-extra').textContent = '';
     return;
   }
 
@@ -1669,37 +1491,8 @@ function renderRecommendation() {
   const restCount = N - Math.min(N, effC * 4);
   const restHint = restCount > 0 ? ` В каждом раунде ${restCount} игрок(ов) отдыхает — алгоритм распределяет это поровну.` : '';
 
-  // Generate two example scores that sum to r.points: one lopsided, one close
-  const lopA = Math.round(r.points * 2 / 3), lopB = r.points - lopA;
-  const closeA = Math.ceil((r.points + 1) / 2), closeB = r.points - closeA;
-
   $('reco-hint').textContent =
-    `Раунд ≈ ${Math.round(r.roundMin)} мин: матч на ${r.points} очков суммарно (например ${lopA}:${lopB} или ${closeA}:${closeB}).${ignored}${restHint}`;
-
-  // Extra info: full rotation rounds + "final fours" suggestion
-  const fullRot = r.fullRotationRounds;
-  const diff = fullRot - r.rounds;
-  let rotMsg;
-  if (diff > 0) {
-    rotMsg = `Полная ротация (каждый с каждым в паре): нужно ${fullRot} раундов — это на ${diff} больше рекомендованного. Увеличь время или раунды, если хочешь идеальную ротацию.`;
-  } else {
-    rotMsg = `Полная ротация (каждый с каждым в паре) укладывается в ${fullRot} раундов — рекомендованного формата хватит.`;
-  }
-
-  let finalMsg = '';
-  const groups = Math.floor(N / 4);
-  if (groups >= 2) {
-    const groupLabels = [];
-    for (let g = 0; g < groups; g++) {
-      const a = g * 4 + 1, b = a + 1, c = a + 2, d = a + 3;
-      groupLabels.push(`${a}+${d} vs ${b}+${c}`);
-    }
-    const extraPlayers = N - groups * 4;
-    const extraNote = extraPlayers > 0 ? ` (последние ${extraPlayers} игрок(ов) — отдых или замены)` : '';
-    finalMsg = ` Если осталось ~30 мин — «финал четвёрок» по местам в таблице: ${groupLabels.join(', ')}${extraNote}.`;
-  }
-
-  $('reco-extra').textContent = rotMsg + finalMsg;
+    `Раунд ≈ ${Math.round(r.roundMin)} мин: каждый матч до ${r.points} очков (например 16:8 или 13:11).${ignored}${restHint}`;
 
   // suggest values into manual fields if user hasn't touched them yet
   if (!state._manualTouched) {
@@ -1783,25 +1576,7 @@ function renderTournament() {
       </div>
     `;
   }).join('');
-  // Preserve focus on score input across re-renders so the mobile keyboard stays open
-  const ae = document.activeElement;
-  let focusRestore = null;
-  if (ae && ae.tagName === 'INPUT' && ae.dataset.matchCourt && ae.dataset.team) {
-    focusRestore = { court: ae.dataset.matchCourt, team: ae.dataset.team };
-  }
-
   $('t-courts-list').innerHTML = html;
-
-  if (focusRestore) {
-    const sel = `input[data-match-court="${focusRestore.court}"][data-team="${focusRestore.team}"]`;
-    const el = $('t-courts-list').querySelector(sel);
-    if (el) {
-      el.focus();
-      // Move cursor to end so the next typed digit appends instead of replacing
-      const v = el.value;
-      try { el.setSelectionRange(v.length, v.length); } catch (_) {}
-    }
-  }
 
   // resters
   if (round.resters && round.resters.length > 0) {
@@ -1832,7 +1607,7 @@ function renderStandings() {
   const standings = computeStandings();
   const tbody = $('standings-body');
   if (standings.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Нет данных</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Нет данных</td></tr>';
     return;
   }
   tbody.innerHTML = standings.map((s, i) => `
@@ -1841,6 +1616,7 @@ function renderStandings() {
       <td class="player-cell">${escapeHtml(s.name)}</td>
       <td class="num">${s.games}</td>
       <td class="num">${s.wins}</td>
+      <td class="num avg-cell">${s.games > 0 ? s.avg.toFixed(1) : '—'}</td>
       <td class="num pts-big">${s.points}</td>
     </tr>
   `).join('');
@@ -1928,134 +1704,22 @@ $('players-list').addEventListener('click', (e) => {
 
 $('back-setup').addEventListener('click', () => showScreen('setup'));
 
-function planAndPreview() {
-  state.history = { partnerCount: {}, opponentCount: {}, restCount: {} };
-  state.currentRound = 0;
-  const N = state.players.length;
-  const effC = Math.max(1, Math.min(state.config.courts, Math.floor(N / 4)));
-  const { rounds, score } = planSchedule(state.players, effC, state.config.rounds);
-  state.rounds = rounds;
-  state.scheduleScore = score;
-  renderPreview();
-  save();
-}
-
 $('go-tournament').addEventListener('click', () => {
   if (state.players.length < 4) {
     showToast('Минимум 4 игрока');
     return;
   }
-  planAndPreview();
-  showScreen('preview');
-});
-
-$('btn-regenerate').addEventListener('click', () => {
-  planAndPreview();
-  showToast('Расписание перегенерировано');
-});
-
-$('back-preview').addEventListener('click', () => showScreen('players'));
-
-$('btn-start-tournament').addEventListener('click', () => {
-  if (!state.rounds || state.rounds.length === 0) {
-    showToast('Расписание пустое');
-    return;
-  }
+  // Reset rounds and history
+  state.rounds = [];
+  state.history = { partnerCount: {}, opponentCount: {}, restCount: {} };
+  state.currentRound = 0;
+  const firstRound = generateRound();
+  state.rounds.push(firstRound);
   showScreen('tournament');
   renderTournament();
   renderStandings();
   save();
 });
-
-function renderPreview() {
-  const N = state.players.length;
-  const totalPairs = (N * (N - 1)) / 2;
-  const score = state.scheduleScore || { uniquePairs: 0, partnerDups: 0, restSpread: 0, opponentDups: 0, oppFloor: 0 };
-
-  $('preview-pairs').textContent = score.partnerDups;
-  $('preview-spread').textContent = score.restSpread;
-  $('preview-opp-spread').textContent = score.opponentDups;
-
-  const badge = $('preview-badge');
-  const partnerOK = score.partnerDups === 0;
-  const restOK = score.restSpread <= 1;
-  const oppOK = score.opponentDups === 0;
-  if (partnerOK && restOK && oppOK) {
-    badge.textContent = `Идеальная ротация: ни одной повторной пары, отдых ровный, соперники у каждого по ${score.oppFloor} раз.`;
-    badge.className = 'card-sub preview-badge good';
-  } else if (partnerOK) {
-    const issues = [];
-    if (!restOK) issues.push(`разброс отдыха ${score.restSpread}`);
-    if (!oppOK) issues.push(`дублей соперников ${score.opponentDups}`);
-    badge.textContent = `Без повторных пар, но есть неравенство: ${issues.join(', ')}.`;
-    badge.className = 'card-sub preview-badge warn';
-  } else {
-    const missingNote = score.uniquePairs < totalPairs
-      ? `, ${totalPairs - score.uniquePairs} пар(ы) вообще не играет`
-      : '';
-    badge.textContent = `Повторных пар: ${score.partnerDups}${missingNote}. Попробуй перегенерировать или увеличь раунды.`;
-    badge.className = 'card-sub preview-badge warn';
-  }
-
-  // Aggregate partner/opponent/rest counts across the full planned schedule
-  const partner = {};
-  const opp = {};
-  const rest = {};
-  for (const p of state.players) {
-    partner[p.id] = {};
-    opp[p.id] = {};
-    rest[p.id] = 0;
-  }
-  for (const round of state.rounds) {
-    for (const m of round.matches) {
-      partner[m.team1[0]][m.team1[1]] = (partner[m.team1[0]][m.team1[1]] || 0) + 1;
-      partner[m.team1[1]][m.team1[0]] = (partner[m.team1[1]][m.team1[0]] || 0) + 1;
-      partner[m.team2[0]][m.team2[1]] = (partner[m.team2[0]][m.team2[1]] || 0) + 1;
-      partner[m.team2[1]][m.team2[0]] = (partner[m.team2[1]][m.team2[0]] || 0) + 1;
-      for (const a of m.team1) for (const b of m.team2) {
-        opp[a][b] = (opp[a][b] || 0) + 1;
-        opp[b][a] = (opp[b][a] || 0) + 1;
-      }
-    }
-    for (const id of (round.resters || [])) rest[id] = (rest[id] || 0) + 1;
-  }
-
-  $('preview-rotation').innerHTML = state.players.map(p => {
-    const partners = Object.entries(partner[p.id])
-      .filter(([_, c]) => c > 0)
-      .sort((a, b) => b[1] - a[1])
-      .map(([id, c]) => {
-        const name = getPlayer(id)?.name || '?';
-        const cTag = c > 1 ? `<span class="x">×${c}</span>` : '';
-        return `<span class="chip partner">${escapeHtml(name)}${cTag}</span>`;
-      }).join('');
-    const opps = Object.entries(opp[p.id])
-      .filter(([_, c]) => c > 0)
-      .sort((a, b) => b[1] - a[1])
-      .map(([id, c]) => {
-        const name = getPlayer(id)?.name || '?';
-        const cTag = c > 1 ? `<span class="x">×${c}</span>` : '';
-        return `<span class="chip opp">${escapeHtml(name)}${cTag}</span>`;
-      }).join('');
-    return `
-      <div class="rotation-row">
-        <div class="rotation-name">${escapeHtml(p.name)}</div>
-        <div class="rotation-line">
-          <span class="rotation-label">Партнёры</span>
-          <span class="rotation-chips">${partners || '<span class="chip">—</span>'}</span>
-        </div>
-        <div class="rotation-line">
-          <span class="rotation-label">Соперники</span>
-          <span class="rotation-chips">${opps || '<span class="chip">—</span>'}</span>
-        </div>
-        <div class="rotation-line">
-          <span class="rotation-label">Отдых</span>
-          <span class="rotation-chips"><span class="chip">${rest[p.id] || 0} раз</span></span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
 
 // Tabs
 document.querySelectorAll('.tab').forEach(tab => {
@@ -2255,6 +1919,27 @@ function renderHistory() {
       rest[id] = (rest[id] || 0) + 1;
     }
   }
+
+  // Compute pair coverage: how many unique pairs have played together
+  const N = state.players.length;
+  const totalPossiblePairs = N >= 2 ? (N * (N - 1)) / 2 : 0;
+  const uniquePairs = new Set();
+  for (const p of state.players) {
+    for (const otherId in (partner[p.id] || {})) {
+      if (partner[p.id][otherId] > 0) {
+        const key = p.id < otherId ? `${p.id}|${otherId}` : `${otherId}|${p.id}`;
+        uniquePairs.add(key);
+      }
+    }
+  }
+  const coveragePct = totalPossiblePairs > 0 ? (uniquePairs.size / totalPossiblePairs) * 100 : 0;
+  const isFull = uniquePairs.size === totalPossiblePairs && totalPossiblePairs > 0;
+  $('rotation-progress').innerHTML = `
+    <span class="rotation-progress-label">Покрытие пар</span>
+    <span class="rotation-progress-value">${uniquePairs.size}<small> / ${totalPossiblePairs}</small></span>
+    <div class="rotation-progress-bar"><div class="rotation-progress-fill ${isFull ? 'full' : ''}" style="width: ${coveragePct.toFixed(1)}%;"></div></div>
+    <span class="rotation-progress-label">${coveragePct.toFixed(0)}%</span>
+  `;
 
   rotEl.innerHTML = state.players.map(p => {
     const partners = Object.entries(partner[p.id] || {})
@@ -2502,9 +2187,6 @@ function init() {
     showScreen('tournament');
     renderTournament();
     renderStandings();
-  } else if (restored && state.screen === 'preview' && state.rounds.length > 0) {
-    showScreen('preview');
-    renderPreview();
   } else if (restored && state.screen === 'players') {
     showScreen('players');
     renderPlayers();
