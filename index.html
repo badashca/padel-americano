@@ -1517,7 +1517,7 @@ function planSchedule(players, C, R) {
   // exactly once — no duplicates by construction.
   const canWhist = (N % 4 === 0) && (C === N / 4);
   if (canWhist) {
-    const whistAll = buildWhistRounds(players, C);
+    const whistAll = buildBestWhist(players, C, 80);
     const take = Math.min(R, whistAll.length);
     rounds = whistAll.slice(0, take);
     for (const round of rounds) applyRoundCounts(round, partner, opponent, rest, +1);
@@ -1639,6 +1639,56 @@ function hasUnplayedPairs(partner, players) {
    the centre, rotate the others around a circle, and pair them up
    symmetrically each round. Yields exactly N-1 rounds where every
    pair of players partners each other exactly once. */
+/* Try `attempts` full Whist schedules and return the one with the best
+   overall opponent distribution. Each call to buildWhistRounds randomises
+   the position-to-player mapping AND the per-round court grouping, so
+   different runs explore quite different opponent layouts. */
+function buildBestWhist(players, C, attempts) {
+  let best = null;
+  let bestMax = Infinity;
+  let bestDups = Infinity;
+  for (let i = 0; i < attempts; i++) {
+    const rounds = buildWhistRounds(players, C);
+    if (!rounds) return null;
+    // Score: lowest max opponent encounter, tiebreak by sum of dups above floor.
+    const opp = {};
+    for (const p of players) opp[p.id] = {};
+    for (const round of rounds) {
+      for (const m of round.matches) {
+        for (const a of m.team1) for (const b of m.team2) {
+          opp[a][b] = (opp[a][b] || 0) + 1;
+          opp[b][a] = (opp[b][a] || 0) + 1;
+        }
+      }
+    }
+    let maxOpp = 0;
+    let sumDups = 0;
+    const N = players.length;
+    // Floor = average opponent encounters per pair, given Whist's fixed totals.
+    // Whist: 2C opp pairs per round × (N-1) rounds × 2 (symmetric) / (N(N-1)) = 2C/N opp per pair-direction;
+    // simpler: each pair as opponents on avg = (R * 2C * 2) / (N*(N-1)) = 4CR / N(N-1).
+    // For N=12, C=3, R=11: 132/132 = 1 — but we count each pair once, so floor = 2 (each direction). Hmm.
+    // Simpler computation:
+    let totalOpp = 0;
+    for (let a = 0; a < N; a++) for (let b = a+1; b < N; b++) totalOpp += (opp[players[a].id][players[b].id] || 0);
+    const totalPairs = N * (N - 1) / 2;
+    const floor = totalPairs > 0 ? Math.floor(totalOpp / totalPairs) : 0;
+    for (let a = 0; a < N; a++) {
+      for (let b = a+1; b < N; b++) {
+        const c = opp[players[a].id][players[b].id] || 0;
+        if (c > maxOpp) maxOpp = c;
+        if (c > floor) sumDups += c - floor;
+      }
+    }
+    if (maxOpp < bestMax || (maxOpp === bestMax && sumDups < bestDups)) {
+      bestMax = maxOpp; bestDups = sumDups; best = rounds;
+      // Can't do better than max=floor+1 typically; stop when we hit ideal.
+      if (maxOpp <= floor + 1 && sumDups === 0) break;
+    }
+  }
+  return best;
+}
+
 function buildWhistRounds(players, C) {
   const N = players.length;
   if (N % 4 !== 0) return null;
