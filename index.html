@@ -1099,8 +1099,8 @@
           <div class="reco-stat-label">Разброс отдыха</div>
         </div>
         <div>
-          <div class="reco-stat-num mono" id="preview-rounds">—</div>
-          <div class="reco-stat-label">Раундов</div>
+          <div class="reco-stat-num mono" id="preview-opp-spread">—</div>
+          <div class="reco-stat-label">Разброс соперников</div>
         </div>
       </div>
       <p class="card-sub" id="preview-badge" style="margin-top: 14px;"></p>
@@ -1456,11 +1456,9 @@ function generateRound() {
    spread. */
 function planSchedule(players, C, R) {
   const N = players.length;
-  if (R <= 0 || N < 4) return { rounds: [], score: { uniquePairs: 0, restSpread: 0 } };
+  if (R <= 0 || N < 4) return { rounds: [], score: { uniquePairs: 0, restSpread: 0, opponentSpread: 0 } };
 
   const ATTEMPTS = 1500;
-  const targetUniquePairs = (N * (N - 1)) / 2;
-
   let best = null;
   let bestScore = null;
 
@@ -1469,10 +1467,6 @@ function planSchedule(players, C, R) {
     if (!bestScore || isBetterSchedule(result.score, bestScore)) {
       best = result.rounds;
       bestScore = result.score;
-      // Early exit: every pair covered, perfectly balanced rests
-      if (bestScore.uniquePairs >= targetUniquePairs && bestScore.restSpread <= 1) {
-        break;
-      }
     }
   }
   return { rounds: best, score: bestScore };
@@ -1480,7 +1474,8 @@ function planSchedule(players, C, R) {
 
 function isBetterSchedule(a, b) {
   if (a.uniquePairs !== b.uniquePairs) return a.uniquePairs > b.uniquePairs;
-  return a.restSpread < b.restSpread;
+  if (a.restSpread !== b.restSpread) return a.restSpread < b.restSpread;
+  return a.opponentSpread < b.opponentSpread;
 }
 
 function scheduleAttempt(players, C, R) {
@@ -1549,15 +1544,20 @@ function scheduleAttempt(players, C, R) {
 
   // Score the resulting schedule
   let uniquePairs = 0;
+  let oppMin = Infinity, oppMax = -Infinity;
   for (let i = 0; i < N; i++) {
     for (let j = i+1; j < N; j++) {
       if (pc(players[i].id, players[j].id) > 0) uniquePairs++;
+      const oCount = oc(players[i].id, players[j].id);
+      if (oCount < oppMin) oppMin = oCount;
+      if (oCount > oppMax) oppMax = oCount;
     }
   }
   const rests = players.map(p => rest[p.id]);
   const restSpread = Math.max(...rests) - Math.min(...rests);
+  const opponentSpread = (oppMax === -Infinity ? 0 : oppMax - oppMin);
 
-  return { rounds, score: { uniquePairs, restSpread } };
+  return { rounds, score: { uniquePairs, restSpread, opponentSpread } };
 }
 
 /* Commit round results to history (called when moving to next round) */
@@ -1951,18 +1951,24 @@ $('btn-start-tournament').addEventListener('click', () => {
 function renderPreview() {
   const N = state.players.length;
   const totalPairs = (N * (N - 1)) / 2;
-  const score = state.scheduleScore || { uniquePairs: 0, restSpread: 0 };
+  const score = state.scheduleScore || { uniquePairs: 0, restSpread: 0, opponentSpread: 0 };
 
   $('preview-pairs').textContent = `${score.uniquePairs}/${totalPairs}`;
   $('preview-spread').textContent = score.restSpread;
-  $('preview-rounds').textContent = state.rounds.length;
+  $('preview-opp-spread').textContent = score.opponentSpread;
 
   const badge = $('preview-badge');
-  if (score.uniquePairs >= totalPairs && score.restSpread <= 1) {
-    badge.textContent = 'Идеальная ротация: каждая пара играет хотя бы раз, отдых распределён ровно.';
+  const allPairs = score.uniquePairs >= totalPairs;
+  const restOK = score.restSpread <= 1;
+  const oppOK = score.opponentSpread <= 1;
+  if (allPairs && restOK && oppOK) {
+    badge.textContent = 'Идеальная ротация: каждая пара играет хотя бы раз, отдых и соперники распределены ровно.';
     badge.className = 'card-sub preview-badge good';
-  } else if (score.uniquePairs >= totalPairs) {
-    badge.textContent = `Все пары охвачены, но разброс отдыха = ${score.restSpread} (одни отдыхают на ${score.restSpread} больше других).`;
+  } else if (allPairs) {
+    const issues = [];
+    if (!restOK) issues.push(`разброс отдыха ${score.restSpread}`);
+    if (!oppOK) issues.push(`разброс соперников ${score.opponentSpread}`);
+    badge.textContent = `Все пары охвачены, но есть неравенство: ${issues.join(', ')}.`;
     badge.className = 'card-sub preview-badge warn';
   } else {
     const missing = totalPairs - score.uniquePairs;
