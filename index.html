@@ -1573,16 +1573,22 @@ function buildOneRound(players, C, partner, opponent, rest) {
         { t1: [a,d], t2: [b,c] },
       ];
       let bestOpt = options[0], bestOptCost = Infinity;
+      // Quadratic opponent penalty — marginal cost of pairing two players
+      // again rises with how many times they've already faced off, so the
+      // optimizer naturally avoids creating heavy duplicates and spreads
+      // opponents evenly. (count + 1)^2 is the would-be square count after
+      // this match commits.
+      const oppPenalty = (count) => (count + 1) * (count + 1);
       for (const opt of options) {
         const pc1 = (partner[opt.t1[0].id][opt.t1[1].id] || 0);
         const pc2 = (partner[opt.t2[0].id][opt.t2[1].id] || 0);
-        // ×1000 partnership penalty — strongly prefer unplayed pairs.
-        // Opponent overlap is the tiebreaker (weight 1).
+        // ×1000 partnership penalty stays dominant — pairs are always
+        // resolved before opponent variety.
         const optCost = pc1 * 1000 + pc2 * 1000
-                     + (opponent[opt.t1[0].id][opt.t2[0].id] || 0)
-                     + (opponent[opt.t1[0].id][opt.t2[1].id] || 0)
-                     + (opponent[opt.t1[1].id][opt.t2[0].id] || 0)
-                     + (opponent[opt.t1[1].id][opt.t2[1].id] || 0);
+                     + oppPenalty(opponent[opt.t1[0].id][opt.t2[0].id] || 0)
+                     + oppPenalty(opponent[opt.t1[0].id][opt.t2[1].id] || 0)
+                     + oppPenalty(opponent[opt.t1[1].id][opt.t2[0].id] || 0)
+                     + oppPenalty(opponent[opt.t1[1].id][opt.t2[1].id] || 0);
         if (optCost < bestOptCost) { bestOptCost = optCost; bestOpt = opt; }
       }
       const pc1 = (partner[bestOpt.t1[0].id][bestOpt.t1[1].id] || 0);
