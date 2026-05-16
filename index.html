@@ -385,61 +385,6 @@
   .preview-team .amp { color: var(--ink-mute); font-weight: 400; margin: 0 3px; }
   .preview-vs { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.16em; }
 
-  /* Schedule table */
-  .schedule-wrap { overflow-x: auto; margin-top: 4px; -webkit-overflow-scrolling: touch; }
-  .schedule-table {
-    border-collapse: collapse;
-    font-size: 12px;
-    width: 100%;
-    min-width: 100%;
-  }
-  .schedule-table th,
-  .schedule-table td {
-    border: 1px solid var(--line-soft);
-    padding: 8px 10px;
-    text-align: left;
-    vertical-align: middle;
-  }
-  .schedule-table thead th {
-    background: var(--bg);
-    color: var(--ink-soft);
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-  .schedule-table td.round-cell {
-    font-family: "JetBrains Mono", monospace;
-    font-weight: 700;
-    text-align: center;
-    color: var(--ink-soft);
-    background: var(--bg);
-    min-width: 36px;
-  }
-  .schedule-table td.match-cell {
-    font-family: "Bricolage Grotesque", serif;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-  .schedule-table td.match-cell .vs {
-    color: var(--ink-mute);
-    font-weight: 400;
-    margin: 0 6px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 11px;
-  }
-  .schedule-table td.match-cell .amp {
-    color: var(--ink-mute);
-    font-weight: 400;
-    margin: 0 2px;
-  }
-  .schedule-table td.match-cell.empty { color: var(--ink-mute); font-weight: 400; }
-  .schedule-table td.rest-cell {
-    font-size: 11px;
-    color: var(--ink-mute);
-    white-space: nowrap;
-  }
 
   /* ---------- Player list ---------- */
   .players-list {
@@ -1162,9 +1107,9 @@
     </div>
 
     <div class="card">
-      <h2 class="card-title">Расписание</h2>
-      <p class="card-sub">Слева раунды, справа корты с парами. Если поле узкое — таблицу можно прокрутить вбок.</p>
-      <div id="preview-rounds-list"></div>
+      <h2 class="card-title">Сводка ротации</h2>
+      <p class="card-sub">Для каждого игрока — с кем партнёрит, против кого играет и сколько раз отдыхает. ×2 у имени означает повторную пару.</p>
+      <div id="preview-rotation" class="rotation-grid"></div>
     </div>
 
     <div class="footer-nav">
@@ -2025,40 +1970,64 @@ function renderPreview() {
     badge.className = 'card-sub preview-badge warn';
   }
 
-  // Determine how many courts the schedule uses (max across rounds)
-  let maxCourts = 0;
-  for (const r of state.rounds) {
-    if (r.matches.length > maxCourts) maxCourts = r.matches.length;
+  // Aggregate partner/opponent/rest counts across the full planned schedule
+  const partner = {};
+  const opp = {};
+  const rest = {};
+  for (const p of state.players) {
+    partner[p.id] = {};
+    opp[p.id] = {};
+    rest[p.id] = 0;
   }
-  const hasResters = state.rounds.some(r => r.resters && r.resters.length > 0);
-
-  let html = '<div class="schedule-wrap"><table class="schedule-table"><thead><tr>';
-  html += '<th>Раунд</th>';
-  for (let c = 1; c <= maxCourts; c++) html += `<th>Корт ${c}</th>`;
-  if (hasResters) html += '<th>Отдых</th>';
-  html += '</tr></thead><tbody>';
-
-  state.rounds.forEach((round, idx) => {
-    html += '<tr>';
-    html += `<td class="round-cell">${idx + 1}</td>`;
-    for (let c = 1; c <= maxCourts; c++) {
-      const m = round.matches.find(x => x.court === c);
-      if (!m) {
-        html += '<td class="match-cell empty">—</td>';
-        continue;
+  for (const round of state.rounds) {
+    for (const m of round.matches) {
+      partner[m.team1[0]][m.team1[1]] = (partner[m.team1[0]][m.team1[1]] || 0) + 1;
+      partner[m.team1[1]][m.team1[0]] = (partner[m.team1[1]][m.team1[0]] || 0) + 1;
+      partner[m.team2[0]][m.team2[1]] = (partner[m.team2[0]][m.team2[1]] || 0) + 1;
+      partner[m.team2[1]][m.team2[0]] = (partner[m.team2[1]][m.team2[0]] || 0) + 1;
+      for (const a of m.team1) for (const b of m.team2) {
+        opp[a][b] = (opp[a][b] || 0) + 1;
+        opp[b][a] = (opp[b][a] || 0) + 1;
       }
-      const t1 = m.team1.map(id => getPlayer(id)?.name || '?');
-      const t2 = m.team2.map(id => getPlayer(id)?.name || '?');
-      html += `<td class="match-cell">${escapeHtml(t1[0])}<span class="amp">&</span>${escapeHtml(t1[1])}<span class="vs">vs</span>${escapeHtml(t2[0])}<span class="amp">&</span>${escapeHtml(t2[1])}</td>`;
     }
-    if (hasResters) {
-      const names = (round.resters || []).map(id => getPlayer(id)?.name || '?').join(', ') || '—';
-      html += `<td class="rest-cell">${escapeHtml(names)}</td>`;
-    }
-    html += '</tr>';
-  });
-  html += '</tbody></table></div>';
-  $('preview-rounds-list').innerHTML = html;
+    for (const id of (round.resters || [])) rest[id] = (rest[id] || 0) + 1;
+  }
+
+  $('preview-rotation').innerHTML = state.players.map(p => {
+    const partners = Object.entries(partner[p.id])
+      .filter(([_, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([id, c]) => {
+        const name = getPlayer(id)?.name || '?';
+        const cTag = c > 1 ? `<span class="x">×${c}</span>` : '';
+        return `<span class="chip partner">${escapeHtml(name)}${cTag}</span>`;
+      }).join('');
+    const opps = Object.entries(opp[p.id])
+      .filter(([_, c]) => c > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([id, c]) => {
+        const name = getPlayer(id)?.name || '?';
+        const cTag = c > 1 ? `<span class="x">×${c}</span>` : '';
+        return `<span class="chip opp">${escapeHtml(name)}${cTag}</span>`;
+      }).join('');
+    return `
+      <div class="rotation-row">
+        <div class="rotation-name">${escapeHtml(p.name)}</div>
+        <div class="rotation-line">
+          <span class="rotation-label">Партнёры</span>
+          <span class="rotation-chips">${partners || '<span class="chip">—</span>'}</span>
+        </div>
+        <div class="rotation-line">
+          <span class="rotation-label">Соперники</span>
+          <span class="rotation-chips">${opps || '<span class="chip">—</span>'}</span>
+        </div>
+        <div class="rotation-line">
+          <span class="rotation-label">Отдых</span>
+          <span class="rotation-chips"><span class="chip">${rest[p.id] || 0} раз</span></span>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // Tabs
