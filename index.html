@@ -1092,7 +1092,7 @@
       <div class="reco-stats">
         <div>
           <div class="reco-stat-num mono" id="preview-pairs">—</div>
-          <div class="reco-stat-label">Уник. пар</div>
+          <div class="reco-stat-label">Дубли партнёров</div>
         </div>
         <div>
           <div class="reco-stat-num mono" id="preview-spread">—</div>
@@ -1100,7 +1100,7 @@
         </div>
         <div>
           <div class="reco-stat-num mono" id="preview-opp-spread">—</div>
-          <div class="reco-stat-label">Разброс соперников</div>
+          <div class="reco-stat-label">Дубли соперников</div>
         </div>
       </div>
       <p class="card-sub" id="preview-badge" style="margin-top: 14px;"></p>
@@ -1456,7 +1456,7 @@ function generateRound() {
    spread. */
 function planSchedule(players, C, R) {
   const N = players.length;
-  if (R <= 0 || N < 4) return { rounds: [], score: { uniquePairs: 0, restSpread: 0, opponentSpread: 0 } };
+  if (R <= 0 || N < 4) return { rounds: [], score: { uniquePairs: 0, partnerDups: 0, restSpread: 0, opponentDups: 0, oppFloor: 0 } };
 
   const ATTEMPTS = 1500;
   let best = null;
@@ -1473,9 +1473,9 @@ function planSchedule(players, C, R) {
 }
 
 function isBetterSchedule(a, b) {
-  if (a.uniquePairs !== b.uniquePairs) return a.uniquePairs > b.uniquePairs;
+  if (a.partnerDups !== b.partnerDups) return a.partnerDups < b.partnerDups;
   if (a.restSpread !== b.restSpread) return a.restSpread < b.restSpread;
-  return a.opponentSpread < b.opponentSpread;
+  return a.opponentDups < b.opponentDups;
 }
 
 function scheduleAttempt(players, C, R) {
@@ -1542,22 +1542,41 @@ function scheduleAttempt(players, C, R) {
     rounds.push({ matches, resters: resters.map(p => p.id) });
   }
 
-  // Score the resulting schedule
+  // Score the resulting schedule.
+  // Pass 1: count unique partner pairs, partner duplicates, total opponent
+  // encounters (needed to compute opponent baseline).
   let uniquePairs = 0;
-  let oppMin = Infinity, oppMax = -Infinity;
+  let partnerDups = 0;
+  let totalOppEncounters = 0;
   for (let i = 0; i < N; i++) {
     for (let j = i+1; j < N; j++) {
-      if (pc(players[i].id, players[j].id) > 0) uniquePairs++;
-      const oCount = oc(players[i].id, players[j].id);
-      if (oCount < oppMin) oppMin = oCount;
-      if (oCount > oppMax) oppMax = oCount;
+      const pCount = pc(players[i].id, players[j].id);
+      if (pCount > 0) uniquePairs++;
+      if (pCount > 1) partnerDups += pCount - 1;
+      totalOppEncounters += oc(players[i].id, players[j].id);
     }
   }
+  // Opponent baseline = how many times each pair "should" be opponents
+  // if encounters were perfectly even across all pairs.
+  const totalPairs = (N * (N - 1)) / 2;
+  const oppFloor = totalPairs > 0 ? Math.floor(totalOppEncounters / totalPairs) : 0;
+
+  // Pass 2: count opponent duplicates above the floor.
+  let opponentDups = 0;
+  for (let i = 0; i < N; i++) {
+    for (let j = i+1; j < N; j++) {
+      const oCount = oc(players[i].id, players[j].id);
+      if (oCount > oppFloor) opponentDups += oCount - oppFloor;
+    }
+  }
+
   const rests = players.map(p => rest[p.id]);
   const restSpread = Math.max(...rests) - Math.min(...rests);
-  const opponentSpread = (oppMax === -Infinity ? 0 : oppMax - oppMin);
 
-  return { rounds, score: { uniquePairs, restSpread, opponentSpread } };
+  return {
+    rounds,
+    score: { uniquePairs, partnerDups, restSpread, opponentDups, oppFloor }
+  };
 }
 
 /* Commit round results to history (called when moving to next round) */
@@ -1951,28 +1970,30 @@ $('btn-start-tournament').addEventListener('click', () => {
 function renderPreview() {
   const N = state.players.length;
   const totalPairs = (N * (N - 1)) / 2;
-  const score = state.scheduleScore || { uniquePairs: 0, restSpread: 0, opponentSpread: 0 };
+  const score = state.scheduleScore || { uniquePairs: 0, partnerDups: 0, restSpread: 0, opponentDups: 0, oppFloor: 0 };
 
-  $('preview-pairs').textContent = `${score.uniquePairs}/${totalPairs}`;
+  $('preview-pairs').textContent = score.partnerDups;
   $('preview-spread').textContent = score.restSpread;
-  $('preview-opp-spread').textContent = score.opponentSpread;
+  $('preview-opp-spread').textContent = score.opponentDups;
 
   const badge = $('preview-badge');
-  const allPairs = score.uniquePairs >= totalPairs;
+  const partnerOK = score.partnerDups === 0;
   const restOK = score.restSpread <= 1;
-  const oppOK = score.opponentSpread <= 1;
-  if (allPairs && restOK && oppOK) {
-    badge.textContent = 'Идеальная ротация: каждая пара играет хотя бы раз, отдых и соперники распределены ровно.';
+  const oppOK = score.opponentDups === 0;
+  if (partnerOK && restOK && oppOK) {
+    badge.textContent = `Идеальная ротация: ни одной повторной пары, отдых ровный, соперники у каждого по ${score.oppFloor} раз.`;
     badge.className = 'card-sub preview-badge good';
-  } else if (allPairs) {
+  } else if (partnerOK) {
     const issues = [];
     if (!restOK) issues.push(`разброс отдыха ${score.restSpread}`);
-    if (!oppOK) issues.push(`разброс соперников ${score.opponentSpread}`);
-    badge.textContent = `Все пары охвачены, но есть неравенство: ${issues.join(', ')}.`;
+    if (!oppOK) issues.push(`дублей соперников ${score.opponentDups}`);
+    badge.textContent = `Без повторных пар, но есть неравенство: ${issues.join(', ')}.`;
     badge.className = 'card-sub preview-badge warn';
   } else {
-    const missing = totalPairs - score.uniquePairs;
-    badge.textContent = `Не хватает ${missing} пар(ы) для полного покрытия. Увеличь раунды или попробуй перегенерировать.`;
+    const missingNote = score.uniquePairs < totalPairs
+      ? `, ${totalPairs - score.uniquePairs} пар(ы) вообще не играет`
+      : '';
+    badge.textContent = `Повторных пар: ${score.partnerDups}${missingNote}. Попробуй перегенерировать или увеличь раунды.`;
     badge.className = 'card-sub preview-badge warn';
   }
 
