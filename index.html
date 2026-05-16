@@ -1650,23 +1650,55 @@ function buildWhistRounds(players, C) {
   const halfRot = Math.floor((rotating - 1) / 2);
 
   // Optional shuffle so the same player set doesn't always get the same
-  // schedule when the user hits "Regenerate" — random permutation of
-  // the position-to-player mapping.
+  // schedule when the user hits "Regenerate".
   const positions = shuffle(players);
+
+  // Track opponent encounters across the schedule so we can pick court
+  // groupings that spread opponents (Whist itself only guarantees
+  // partnership uniqueness — opponent variety has to be optimised here).
+  const opponent = {};
+  for (const p of players) opponent[p.id] = {};
+  const oppCount = (a, b) => opponent[a][b] || 0;
+  const oppPenalty = (count) => (count + 1) * (count + 1);
 
   const rounds = [];
   for (let r = 0; r < rotating; r++) {
+    // Whist 1-factorization: N/2 partnerships per round, every pair
+    // appears exactly once across the full schedule.
     const partnerships = [];
-    partnerships.push([fixed, r]);                   // centre + position r
+    partnerships.push([fixed, r]);
     for (let i = 1; i <= halfRot; i++) {
       const a = (r + i) % rotating;
       const b = ((r - i) % rotating + rotating) % rotating;
       partnerships.push([a, b]);
     }
+
+    // Group these N/2 partnerships into C courts (2 partnerships per
+    // court → 2v2). Sample many random groupings and keep the one with
+    // the lowest opponent-penalty given accumulated history.
+    const ASSIGN_TRIES = 800;
+    let bestCourts = null;
+    let bestCost = Infinity;
+    for (let t = 0; t < ASSIGN_TRIES; t++) {
+      const shuf = shuffle(partnerships);
+      const courts = [];
+      let cost = 0;
+      for (let c = 0; c < expectedCourts; c++) {
+        const t1 = shuf[2 * c];
+        const t2 = shuf[2 * c + 1];
+        cost += oppPenalty(oppCount(positions[t1[0]].id, positions[t2[0]].id))
+              + oppPenalty(oppCount(positions[t1[0]].id, positions[t2[1]].id))
+              + oppPenalty(oppCount(positions[t1[1]].id, positions[t2[0]].id))
+              + oppPenalty(oppCount(positions[t1[1]].id, positions[t2[1]].id));
+        courts.push([t1, t2]);
+      }
+      if (cost < bestCost) { bestCost = cost; bestCourts = courts; }
+    }
+
+    // Commit the chosen courts and bump opponent counters.
     const matches = [];
     for (let c = 0; c < expectedCourts; c++) {
-      const t1 = partnerships[2 * c];
-      const t2 = partnerships[2 * c + 1];
+      const [t1, t2] = bestCourts[c];
       matches.push({
         court: c + 1,
         team1: [positions[t1[0]].id, positions[t1[1]].id],
@@ -1674,6 +1706,14 @@ function buildWhistRounds(players, C) {
         score1: null,
         score2: null,
       });
+      const team1Ids = [positions[t1[0]].id, positions[t1[1]].id];
+      const team2Ids = [positions[t2[0]].id, positions[t2[1]].id];
+      for (const a of team1Ids) {
+        for (const b of team2Ids) {
+          opponent[a][b] = (opponent[a][b] || 0) + 1;
+          opponent[b][a] = (opponent[b][a] || 0) + 1;
+        }
+      }
     }
     rounds.push({ matches, resters: [] });
   }
