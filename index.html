@@ -336,6 +336,36 @@
   #screen-preview .reco-stat-label { color: var(--ink-mute); }
   .preview-badge.good { color: var(--court); font-weight: 600; }
   .preview-badge.warn { color: var(--ink-soft); }
+  .history-progress {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--line-soft);
+    font-size: 13px;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .history-progress .progress-main {
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .history-progress .progress-bar {
+    flex: 1;
+    min-width: 80px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--line-soft);
+    overflow: hidden;
+  }
+  .history-progress .progress-bar .fill {
+    height: 100%;
+    background: var(--court);
+    transition: width 200ms ease;
+  }
   .preview-round {
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-sm);
@@ -637,6 +667,12 @@
     font-family: "Bricolage Grotesque", serif;
     font-size: 22px !important;
     color: var(--ink);
+  }
+  .standings-table .avg-col {
+    color: var(--ink-mute);
+    font-size: 12px;
+    font-weight: 500;
+    padding-left: 4px !important;
   }
 
   /* ---------- Tabs / nav ---------- */
@@ -1174,6 +1210,7 @@
               <th class="num">Игр</th>
               <th class="num">Поб.</th>
               <th class="num">Очки</th>
+              <th class="num avg-col">Ср.</th>
             </tr>
           </thead>
           <tbody id="standings-body"></tbody>
@@ -1201,6 +1238,10 @@
       <div class="card">
         <h2 class="card-title">Сводка ротации</h2>
         <p class="card-sub">Для каждого игрока — с кем партнёрил, против кого играл и сколько раз отдыхал. Если цифры рядом с именами равномерные — ротация честная.</p>
+        <div id="history-pair-progress" class="history-progress"></div>
+        <div id="history-regen-wrap" style="display:none; margin-top:12px;">
+          <button class="btn btn-ghost" id="btn-regen-remaining">Перегенерировать оставшиеся раунды</button>
+        </div>
         <div id="history-rotation" class="rotation-grid"></div>
       </div>
     </div>
@@ -1456,34 +1497,10 @@ function generateRound() {
    spread. */
 function planSchedule(players, C, R) {
   const N = players.length;
-  if (R <= 0 || N < 4) return { rounds: [], score: { uniquePairs: 0, partnerDups: 0, restSpread: 0, opponentDups: 0, oppFloor: 0 } };
+  const emptyScore = { uniquePairs: 0, partnerDups: 0, restSpread: 0, opponentDups: 0, oppFloor: 0 };
+  if (R <= 0 || N < 4) return { rounds: [], score: emptyScore };
 
-  const ATTEMPTS = 1500;
-  let best = null;
-  let bestScore = null;
-
-  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-    const result = scheduleAttempt(players, C, R);
-    if (!bestScore || isBetterSchedule(result.score, bestScore)) {
-      best = result.rounds;
-      bestScore = result.score;
-    }
-  }
-  return { rounds: best, score: bestScore };
-}
-
-function isBetterSchedule(a, b) {
-  if (a.partnerDups !== b.partnerDups) return a.partnerDups < b.partnerDups;
-  if (a.restSpread !== b.restSpread) return a.restSpread < b.restSpread;
-  return a.opponentDups < b.opponentDups;
-}
-
-function scheduleAttempt(players, C, R) {
-  const N = players.length;
-  const playingCount = Math.min(N, C * 4);
-  const restingCount = N - playingCount;
-
-  // Local counts (don't touch state.history)
+  // Fresh local counts — we're planning from scratch.
   const partner = {};
   const opponent = {};
   const rest = {};
@@ -1492,23 +1509,62 @@ function scheduleAttempt(players, C, R) {
     opponent[p.id] = {};
     rest[p.id] = 0;
   }
-  const pc = (a, b) => partner[a][b] || 0;
-  const oc = (a, b) => opponent[a][b] || 0;
-  const bumpPC = (a, b) => { partner[a][b] = pc(a,b) + 1; partner[b][a] = pc(b,a) + 1; };
-  const bumpOC = (a, b) => { opponent[a][b] = oc(a,b) + 1; opponent[b][a] = oc(b,a) + 1; };
 
-  const rounds = [];
-  for (let r = 0; r < R; r++) {
-    // Pick resters: lowest restCount first, random tiebreak
-    const sorted = [...players].sort((a, b) => {
-      const ra = rest[a.id], rb = rest[b.id];
-      if (ra !== rb) return ra - rb;
-      return Math.random() - 0.5;
-    });
-    const resters = sorted.slice(0, restingCount);
-    const playing = shuffle(sorted.slice(restingCount));
+  let rounds = [];
 
+  // For N divisible by 4 AND every court filled (C === N/4): use Whist
+  // tournament for the first N-1 rounds. Guarantees every pair partners
+  // exactly once — no duplicates by construction.
+  const canWhist = (N % 4 === 0) && (C === N / 4);
+  if (canWhist) {
+    const whistAll = buildWhistRounds(players, C);
+    const take = Math.min(R, whistAll.length);
+    rounds = whistAll.slice(0, take);
+    for (const round of rounds) applyRoundCounts(round, partner, opponent, rest, +1);
+
+    // If user asked for more than N-1 rounds, fill the rest with greedy
+    // (these will start duplicating partnerships since every pair has
+    // already played — minimise overlap).
+    if (R > take) {
+      const extra = planRoundsGreedy(players, C, R - take, partner, opponent, rest);
+      rounds = rounds.concat(extra);
+    }
+  } else {
+    rounds = planRoundsGreedy(players, C, R, partner, opponent, rest);
+  }
+
+  const score = scoreSchedule(players, partner, opponent, rest);
+  return { rounds, score };
+}
+
+/* Build a single round given current global counts. Tries SHUFFLE_TRIES
+   shuffles of the playing pool and picks the one producing the fewest
+   new partnership duplicates. Heavy ×1000 penalty makes the optimizer
+   strongly prefer unplayed pairs. */
+function buildOneRound(players, C, partner, opponent, rest) {
+  const N = players.length;
+  const playingCount = Math.min(N, C * 4);
+  const restingCount = N - playingCount;
+
+  const sorted = [...players].sort((a, b) => {
+    const ra = rest[a.id], rb = rest[b.id];
+    if (ra !== rb) return ra - rb;
+    return Math.random() - 0.5;
+  });
+  const resters = sorted.slice(0, restingCount);
+  const playingPool = sorted.slice(restingCount);
+
+  const SHUFFLE_TRIES = 24;
+  let bestRound = null;
+  let bestNewDupes = Infinity;
+  let bestCost = Infinity;
+
+  for (let s = 0; s < SHUFFLE_TRIES; s++) {
+    const playing = shuffle(playingPool);
     const matches = [];
+    let newDupes = 0;
+    let cost = 0;
+
     for (let i = 0; i < playing.length; i += 4) {
       const a = playing[i], b = playing[i+1], c = playing[i+2], d = playing[i+3];
       const options = [
@@ -1516,20 +1572,24 @@ function scheduleAttempt(players, C, R) {
         { t1: [a,c], t2: [b,d] },
         { t1: [a,d], t2: [b,c] },
       ];
-      let bestOpt = options[0], bestCost = Infinity;
+      let bestOpt = options[0], bestOptCost = Infinity;
       for (const opt of options) {
-        const cost = pc(opt.t1[0].id, opt.t1[1].id) * 4
-                   + pc(opt.t2[0].id, opt.t2[1].id) * 4
-                   + oc(opt.t1[0].id, opt.t2[0].id)
-                   + oc(opt.t1[0].id, opt.t2[1].id)
-                   + oc(opt.t1[1].id, opt.t2[0].id)
-                   + oc(opt.t1[1].id, opt.t2[1].id);
-        if (cost < bestCost) { bestCost = cost; bestOpt = opt; }
+        const pc1 = (partner[opt.t1[0].id][opt.t1[1].id] || 0);
+        const pc2 = (partner[opt.t2[0].id][opt.t2[1].id] || 0);
+        // ×1000 partnership penalty — strongly prefer unplayed pairs.
+        // Opponent overlap is the tiebreaker (weight 1).
+        const optCost = pc1 * 1000 + pc2 * 1000
+                     + (opponent[opt.t1[0].id][opt.t2[0].id] || 0)
+                     + (opponent[opt.t1[0].id][opt.t2[1].id] || 0)
+                     + (opponent[opt.t1[1].id][opt.t2[0].id] || 0)
+                     + (opponent[opt.t1[1].id][opt.t2[1].id] || 0);
+        if (optCost < bestOptCost) { bestOptCost = optCost; bestOpt = opt; }
       }
-      bumpPC(bestOpt.t1[0].id, bestOpt.t1[1].id);
-      bumpPC(bestOpt.t2[0].id, bestOpt.t2[1].id);
-      for (const p1 of bestOpt.t1) for (const p2 of bestOpt.t2) bumpOC(p1.id, p2.id);
-
+      const pc1 = (partner[bestOpt.t1[0].id][bestOpt.t1[1].id] || 0);
+      const pc2 = (partner[bestOpt.t2[0].id][bestOpt.t2[1].id] || 0);
+      if (pc1 > 0) newDupes++;
+      if (pc2 > 0) newDupes++;
+      cost += bestOptCost;
       matches.push({
         court: (i/4) + 1,
         team1: [bestOpt.t1[0].id, bestOpt.t1[1].id],
@@ -1538,45 +1598,141 @@ function scheduleAttempt(players, C, R) {
         score2: null,
       });
     }
-    for (const p of resters) rest[p.id]++;
-    rounds.push({ matches, resters: resters.map(p => p.id) });
-  }
 
-  // Score the resulting schedule.
-  // Pass 1: count unique partner pairs, partner duplicates, total opponent
-  // encounters (needed to compute opponent baseline).
+    if (newDupes < bestNewDupes || (newDupes === bestNewDupes && cost < bestCost)) {
+      bestNewDupes = newDupes;
+      bestCost = cost;
+      bestRound = { matches, resters: resters.map(p => p.id), newDupes };
+      if (newDupes === 0) break; // perfect round, no need to try more shuffles
+    }
+  }
+  return bestRound;
+}
+
+function applyRoundCounts(round, partner, opponent, rest, sign) {
+  for (const m of round.matches) {
+    const bump = (a, b, map) => { map[a][b] = (map[a][b] || 0) + sign; map[b][a] = (map[b][a] || 0) + sign; };
+    bump(m.team1[0], m.team1[1], partner);
+    bump(m.team2[0], m.team2[1], partner);
+    for (const p1 of m.team1) for (const p2 of m.team2) bump(p1, p2, opponent);
+  }
+  for (const id of round.resters) rest[id] = (rest[id] || 0) + sign;
+}
+
+function hasUnplayedPairs(partner, players) {
+  for (let i = 0; i < players.length; i++) {
+    for (let j = i+1; j < players.length; j++) {
+      if (!partner[players[i].id][players[j].id]) return true;
+    }
+  }
+  return false;
+}
+
+/* Whist tournament construction for N divisible by 4.
+   Uses 1-factorization of the complete graph K_N: fix one player at
+   the centre, rotate the others around a circle, and pair them up
+   symmetrically each round. Yields exactly N-1 rounds where every
+   pair of players partners each other exactly once. */
+function buildWhistRounds(players, C) {
+  const N = players.length;
+  if (N % 4 !== 0) return null;
+  const expectedCourts = N / 4;
+  if (C !== expectedCourts) return null;
+
+  const rotating = N - 1;          // positions 0..N-2 sit on the circle
+  const fixed = N - 1;             // last player sits at the centre
+  const halfRot = Math.floor((rotating - 1) / 2);
+
+  // Optional shuffle so the same player set doesn't always get the same
+  // schedule when the user hits "Regenerate" — random permutation of
+  // the position-to-player mapping.
+  const positions = shuffle(players);
+
+  const rounds = [];
+  for (let r = 0; r < rotating; r++) {
+    const partnerships = [];
+    partnerships.push([fixed, r]);                   // centre + position r
+    for (let i = 1; i <= halfRot; i++) {
+      const a = (r + i) % rotating;
+      const b = ((r - i) % rotating + rotating) % rotating;
+      partnerships.push([a, b]);
+    }
+    const matches = [];
+    for (let c = 0; c < expectedCourts; c++) {
+      const t1 = partnerships[2 * c];
+      const t2 = partnerships[2 * c + 1];
+      matches.push({
+        court: c + 1,
+        team1: [positions[t1[0]].id, positions[t1[1]].id],
+        team2: [positions[t2[0]].id, positions[t2[1]].id],
+        score1: null,
+        score2: null,
+      });
+    }
+    rounds.push({ matches, resters: [] });
+  }
+  return rounds;
+}
+
+/* Run `attempts` greedy round candidates against the current global
+   counts and return the one with the fewest new partnership duplicates
+   (tiebreak: lower total cost). Stops early on a duplicate-free round. */
+function pickBestRound(players, C, partner, opponent, rest, attempts) {
+  let best = null;
+  let bestDupes = Infinity;
+  let bestCost = Infinity;
+  for (let a = 0; a < attempts; a++) {
+    const round = buildOneRound(players, C, partner, opponent, rest);
+    const cost = round.newDupes;
+    if (cost < bestDupes) {
+      bestDupes = cost;
+      bestCost = cost;
+      best = round;
+      if (bestDupes === 0) break;
+    }
+  }
+  return best;
+}
+
+/* Build `R` rounds greedily on top of the supplied counts. Each round
+   picks the best of 1500 random shuffles before being committed. */
+function planRoundsGreedy(players, C, R, partner, opponent, rest) {
+  const ATTEMPTS_PER_ROUND = 1500;
+  const rounds = [];
+  for (let r = 0; r < R; r++) {
+    const round = pickBestRound(players, C, partner, opponent, rest, ATTEMPTS_PER_ROUND);
+    applyRoundCounts(round, partner, opponent, rest, +1);
+    rounds.push(round);
+  }
+  return rounds;
+}
+
+/* Score a fully-built schedule from the local count tables. */
+function scoreSchedule(players, partner, opponent, rest) {
+  const N = players.length;
   let uniquePairs = 0;
   let partnerDups = 0;
   let totalOppEncounters = 0;
   for (let i = 0; i < N; i++) {
-    for (let j = i+1; j < N; j++) {
-      const pCount = pc(players[i].id, players[j].id);
+    for (let j = i + 1; j < N; j++) {
+      const pCount = partner[players[i].id][players[j].id] || 0;
       if (pCount > 0) uniquePairs++;
       if (pCount > 1) partnerDups += pCount - 1;
-      totalOppEncounters += oc(players[i].id, players[j].id);
+      totalOppEncounters += (opponent[players[i].id][players[j].id] || 0);
     }
   }
-  // Opponent baseline = how many times each pair "should" be opponents
-  // if encounters were perfectly even across all pairs.
   const totalPairs = (N * (N - 1)) / 2;
   const oppFloor = totalPairs > 0 ? Math.floor(totalOppEncounters / totalPairs) : 0;
-
-  // Pass 2: count opponent duplicates above the floor.
   let opponentDups = 0;
   for (let i = 0; i < N; i++) {
-    for (let j = i+1; j < N; j++) {
-      const oCount = oc(players[i].id, players[j].id);
+    for (let j = i + 1; j < N; j++) {
+      const oCount = opponent[players[i].id][players[j].id] || 0;
       if (oCount > oppFloor) opponentDups += oCount - oppFloor;
     }
   }
-
-  const rests = players.map(p => rest[p.id]);
-  const restSpread = Math.max(...rests) - Math.min(...rests);
-
-  return {
-    rounds,
-    score: { uniquePairs, partnerDups, restSpread, opponentDups, oppFloor }
-  };
+  const rests = players.map(p => rest[p.id] || 0);
+  const restSpread = rests.length ? (Math.max(...rests) - Math.min(...rests)) : 0;
+  return { uniquePairs, partnerDups, restSpread, opponentDups, oppFloor };
 }
 
 /* Commit round results to history (called when moving to next round) */
@@ -1627,9 +1783,15 @@ function computeStandings() {
       }
     }
   }
+  // Compute avg-per-match. Player with fewer games but same total
+  // points is "playing better", so this is the tiebreak after wins.
+  for (const s of Object.values(stats)) {
+    s.avg = s.games > 0 ? s.points / s.games : 0;
+  }
   return Object.values(stats).sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points;
     if (b.wins !== a.wins) return b.wins - a.wins;
+    if (b.avg !== a.avg) return b.avg - a.avg;
     return a.name.localeCompare(b.name, 'ru');
   });
 }
@@ -1832,7 +1994,7 @@ function renderStandings() {
   const standings = computeStandings();
   const tbody = $('standings-body');
   if (standings.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Нет данных</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Нет данных</td></tr>';
     return;
   }
   tbody.innerHTML = standings.map((s, i) => `
@@ -1842,6 +2004,7 @@ function renderStandings() {
       <td class="num">${s.games}</td>
       <td class="num">${s.wins}</td>
       <td class="num pts-big">${s.points}</td>
+      <td class="num avg-col">${s.games > 0 ? s.avg.toFixed(1) : '—'}</td>
     </tr>
   `).join('');
 }
@@ -1965,6 +2128,41 @@ $('btn-start-tournament').addEventListener('click', () => {
   renderTournament();
   renderStandings();
   save();
+});
+
+$('btn-regen-remaining').addEventListener('click', () => {
+  const startIdx = state.currentRound + 1; // keep current round, replan future
+  const remainingCount = state.rounds.length - startIdx;
+  if (remainingCount <= 0) {
+    showToast('Нет будущих раундов');
+    return;
+  }
+
+  // Build local counts that include EVERYTHING up to and including the
+  // current round (committed history + the in-progress round's pairings,
+  // even if its scores aren't filled yet — the pairings are what matters
+  // for partnership/opponent tracking).
+  const N = state.players.length;
+  const effC = Math.max(1, Math.min(state.config.courts, Math.floor(N / 4)));
+  const partner = {};
+  const opponent = {};
+  const rest = {};
+  for (const p of state.players) {
+    partner[p.id] = {};
+    opponent[p.id] = {};
+    rest[p.id] = 0;
+  }
+  for (let i = 0; i < startIdx; i++) {
+    applyRoundCounts(state.rounds[i], partner, opponent, rest, +1);
+  }
+
+  const newRounds = planRoundsGreedy(state.players, effC, remainingCount, partner, opponent, rest);
+  state.rounds = state.rounds.slice(0, startIdx).concat(newRounds);
+  save();
+  renderHistory();
+  renderTournament();
+  renderStandings();
+  showToast('Оставшиеся раунды перегенерированы');
 });
 
 function renderPreview() {
@@ -2255,6 +2453,27 @@ function renderHistory() {
       rest[id] = (rest[id] || 0) + 1;
     }
   }
+
+  // Pair progress: how many unique pairs have actually played together
+  const N = state.players.length;
+  const totalPairs = N * (N - 1) / 2;
+  let playedPairs = 0;
+  for (let i = 0; i < N; i++) {
+    for (let j = i + 1; j < N; j++) {
+      if ((partner[state.players[i].id]?.[state.players[j].id] || 0) > 0) playedPairs++;
+    }
+  }
+  const pct = totalPairs > 0 ? Math.round((playedPairs / totalPairs) * 100) : 0;
+  $('history-pair-progress').innerHTML = `
+    <span class="progress-main">Сыграно ${playedPairs} из ${totalPairs} возможных пар</span>
+    <span class="progress-bar"><span class="fill" style="width:${pct}%"></span></span>
+    <span>${pct}%</span>
+  `;
+
+  // Show the "regenerate remaining" button only if there are upcoming
+  // rounds left to play (we never replan the past).
+  const remainingRounds = state.rounds.length - 1 - state.currentRound;
+  $('history-regen-wrap').style.display = remainingRounds > 0 ? '' : 'none';
 
   rotEl.innerHTML = state.players.map(p => {
     const partners = Object.entries(partner[p.id] || {})
