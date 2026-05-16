@@ -331,6 +331,60 @@
     line-height: 1.5;
   }
 
+  /* ---------- Preview screen (uses reco-stats on light card) ---------- */
+  #screen-preview .reco-stats { margin-top: 8px; }
+  #screen-preview .reco-stat-label { color: var(--ink-mute); }
+  .preview-badge.good { color: var(--court); font-weight: 600; }
+  .preview-badge.warn { color: var(--ink-soft); }
+  .preview-round {
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-top: 8px;
+  }
+  .preview-round-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .preview-round-num {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 700;
+  }
+  .preview-round-rest {
+    font-size: 11px;
+    color: var(--ink-mute);
+  }
+  .preview-match {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+  .preview-match + .preview-match { border-top: 1px dashed var(--line-soft); }
+  .preview-match .court {
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    grid-column: 1 / -1;
+    margin-top: 2px;
+  }
+  .preview-team {
+    font-family: "Bricolage Grotesque", serif;
+    font-weight: 600;
+  }
+  .preview-team.right { text-align: right; }
+  .preview-team .amp { color: var(--ink-mute); font-weight: 400; margin: 0 3px; }
+  .preview-vs { font-size: 11px; color: var(--ink-mute); letter-spacing: 0.16em; }
+
   /* ---------- Player list ---------- */
   .players-list {
     display: flex;
@@ -1022,7 +1076,44 @@
 
     <div class="footer-nav">
       <button class="btn btn-ghost" id="back-setup">← Назад</button>
-      <button class="btn btn-primary btn-block" id="go-tournament" disabled>Начать турнир →</button>
+      <button class="btn btn-primary btn-block" id="go-tournament" disabled>Дальше: расписание →</button>
+    </div>
+  </section>
+
+  <!-- ============ PREVIEW ============ -->
+  <section id="screen-preview" class="screen">
+    <span class="eyebrow">Шаг 3 · Расписание</span>
+    <h1 class="title">Кто <em>с кем</em> играет</h1>
+    <p class="lede">Посмотри пары перед стартом. Если ротация не нравится — перегенерируй.</p>
+
+    <div class="card">
+      <h2 class="card-title">Качество расписания</h2>
+      <div class="reco-stats">
+        <div>
+          <div class="reco-stat-num mono" id="preview-pairs">—</div>
+          <div class="reco-stat-label">Уник. пар</div>
+        </div>
+        <div>
+          <div class="reco-stat-num mono" id="preview-spread">—</div>
+          <div class="reco-stat-label">Разброс отдыха</div>
+        </div>
+        <div>
+          <div class="reco-stat-num mono" id="preview-rounds">—</div>
+          <div class="reco-stat-label">Раундов</div>
+        </div>
+      </div>
+      <p class="card-sub" id="preview-badge" style="margin-top: 14px;"></p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Раунды</h2>
+      <div id="preview-rounds-list"></div>
+    </div>
+
+    <div class="footer-nav">
+      <button class="btn btn-ghost" id="back-preview">← Назад</button>
+      <button class="btn btn-ghost" id="btn-regenerate">Перегенерировать</button>
+      <button class="btn btn-primary btn-block" id="btn-start-tournament">Начать турнир →</button>
     </div>
   </section>
 
@@ -1179,6 +1270,7 @@ function save() {
       rounds: state.rounds,
       history: state.history,
       currentRound: state.currentRound,
+      scheduleScore: state.scheduleScore,
     }));
   } catch (e) { console.warn('save failed', e); }
 }
@@ -1223,40 +1315,48 @@ function showToast(msg) {
 }
 
 /* ---------- Format recommendation ---------- */
-/* Strategy: fix rounds at N-1 (everyone-partners-everyone target for
-   the classic Americano with N/4 full courts), then pick the highest
-   points-per-match candidate whose total duration fits in T minutes. */
+/* Strategy: rounds = ceil(N*(N-1)/(4C)) — minimum needed for every
+   pair to play at least once given C courts (2 partnerships/round
+   per court). Equals N-1 when N is divisible by 4 with full courts;
+   higher otherwise (e.g. N=10, C=2 → 12 rounds, not 9). Then pick
+   the highest points-per-match candidate whose total duration fits
+   in T minutes. */
 function recommendFormat(N, C, T) {
   N = Math.max(4, N|0);
   C = Math.max(1, Math.min(C|0, Math.floor(N / 4) || 1));
   T = Math.max(30, T|0);
 
-  const rounds = N - 1;
+  const fullRotationRounds = Math.ceil((N * (N - 1)) / (4 * C));
   const candidates = [16, 21, 24, 28, 32];
   const transition = 2; // minutes between rounds (gather, switch, drinks)
 
-  // Pick the highest points value that fits N-1 rounds in T minutes.
-  // Total time ≈ rounds * roundMin + (rounds - 1) * transition.
+  // First pass: try to fit full-rotation rounds at the highest points value
+  // that still respects T. Total time ≈ R * roundMin + (R - 1) * transition.
   let best = null;
   for (const pts of candidates) {
     const roundMin = pts * 0.5 + 2; // ~30 sec per point + 2 min margin
-    const totalTime = rounds * roundMin + Math.max(0, rounds - 1) * transition;
+    const totalTime = fullRotationRounds * roundMin + Math.max(0, fullRotationRounds - 1) * transition;
     if (totalTime <= T) {
       if (!best || pts > best.points) {
-        best = { rounds, points: pts, roundMin };
+        best = { rounds: fullRotationRounds, points: pts, roundMin };
       }
     }
   }
+
+  // Fallback: even at minimum points (16) the full rotation won't fit.
+  // Keep matches short (16 pts) and reduce rounds to fit T — user can
+  // bump the time field if they want full coverage.
   if (!best) {
-    // Even the smallest candidate doesn't fit — use it anyway and let
-    // the user widen the time field if they want longer matches.
     const pts = candidates[0];
-    best = { rounds, points: pts, roundMin: pts * 0.5 + 2 };
+    const roundMin = pts * 0.5 + 2;
+    const fitRounds = Math.max(3, Math.floor((T + transition) / (roundMin + transition)));
+    const rounds = Math.min(fitRounds, fullRotationRounds);
+    best = { rounds, points: pts, roundMin };
   }
 
   const playPerRound = Math.min(N, C * 4);
-  best.gamesPerPlayer = (rounds * playPerRound) / N;
-  best.fullRotationRounds = Math.ceil((N * (N - 1)) / (4 * C));
+  best.gamesPerPlayer = (best.rounds * playPerRound) / N;
+  best.fullRotationRounds = fullRotationRounds;
   return best;
 }
 
@@ -1343,6 +1443,119 @@ function generateRound() {
     matches: bestMatches,
     resters: resters.map(p => p.id),
   };
+}
+
+/* ---------- Full-schedule planner ----------
+   Runs many attempts to generate a complete R-round schedule. Each
+   attempt builds the schedule round-by-round with greedy choices for
+   resters (lowest rest count first) and pairings (minimize repeated
+   partnerships and opponents). Across attempts we pick the schedule
+   that maximizes unique partner pairs, breaking ties by minimum rest
+   spread. */
+function planSchedule(players, C, R) {
+  const N = players.length;
+  if (R <= 0 || N < 4) return { rounds: [], score: { uniquePairs: 0, restSpread: 0 } };
+
+  const ATTEMPTS = 1500;
+  const targetUniquePairs = (N * (N - 1)) / 2;
+
+  let best = null;
+  let bestScore = null;
+
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const result = scheduleAttempt(players, C, R);
+    if (!bestScore || isBetterSchedule(result.score, bestScore)) {
+      best = result.rounds;
+      bestScore = result.score;
+      // Early exit: every pair covered, perfectly balanced rests
+      if (bestScore.uniquePairs >= targetUniquePairs && bestScore.restSpread <= 1) {
+        break;
+      }
+    }
+  }
+  return { rounds: best, score: bestScore };
+}
+
+function isBetterSchedule(a, b) {
+  if (a.uniquePairs !== b.uniquePairs) return a.uniquePairs > b.uniquePairs;
+  return a.restSpread < b.restSpread;
+}
+
+function scheduleAttempt(players, C, R) {
+  const N = players.length;
+  const playingCount = Math.min(N, C * 4);
+  const restingCount = N - playingCount;
+
+  // Local counts (don't touch state.history)
+  const partner = {};
+  const opponent = {};
+  const rest = {};
+  for (const p of players) {
+    partner[p.id] = {};
+    opponent[p.id] = {};
+    rest[p.id] = 0;
+  }
+  const pc = (a, b) => partner[a][b] || 0;
+  const oc = (a, b) => opponent[a][b] || 0;
+  const bumpPC = (a, b) => { partner[a][b] = pc(a,b) + 1; partner[b][a] = pc(b,a) + 1; };
+  const bumpOC = (a, b) => { opponent[a][b] = oc(a,b) + 1; opponent[b][a] = oc(b,a) + 1; };
+
+  const rounds = [];
+  for (let r = 0; r < R; r++) {
+    // Pick resters: lowest restCount first, random tiebreak
+    const sorted = [...players].sort((a, b) => {
+      const ra = rest[a.id], rb = rest[b.id];
+      if (ra !== rb) return ra - rb;
+      return Math.random() - 0.5;
+    });
+    const resters = sorted.slice(0, restingCount);
+    const playing = shuffle(sorted.slice(restingCount));
+
+    const matches = [];
+    for (let i = 0; i < playing.length; i += 4) {
+      const a = playing[i], b = playing[i+1], c = playing[i+2], d = playing[i+3];
+      const options = [
+        { t1: [a,b], t2: [c,d] },
+        { t1: [a,c], t2: [b,d] },
+        { t1: [a,d], t2: [b,c] },
+      ];
+      let bestOpt = options[0], bestCost = Infinity;
+      for (const opt of options) {
+        const cost = pc(opt.t1[0].id, opt.t1[1].id) * 4
+                   + pc(opt.t2[0].id, opt.t2[1].id) * 4
+                   + oc(opt.t1[0].id, opt.t2[0].id)
+                   + oc(opt.t1[0].id, opt.t2[1].id)
+                   + oc(opt.t1[1].id, opt.t2[0].id)
+                   + oc(opt.t1[1].id, opt.t2[1].id);
+        if (cost < bestCost) { bestCost = cost; bestOpt = opt; }
+      }
+      bumpPC(bestOpt.t1[0].id, bestOpt.t1[1].id);
+      bumpPC(bestOpt.t2[0].id, bestOpt.t2[1].id);
+      for (const p1 of bestOpt.t1) for (const p2 of bestOpt.t2) bumpOC(p1.id, p2.id);
+
+      matches.push({
+        court: (i/4) + 1,
+        team1: [bestOpt.t1[0].id, bestOpt.t1[1].id],
+        team2: [bestOpt.t2[0].id, bestOpt.t2[1].id],
+        score1: null,
+        score2: null,
+      });
+    }
+    for (const p of resters) rest[p.id]++;
+    rounds.push({ matches, resters: resters.map(p => p.id) });
+  }
+
+  // Score the resulting schedule
+  let uniquePairs = 0;
+  for (let i = 0; i < N; i++) {
+    for (let j = i+1; j < N; j++) {
+      if (pc(players[i].id, players[j].id) > 0) uniquePairs++;
+    }
+  }
+  const rests = players.map(p => rest[p.id]);
+  const restSpread = Math.max(...rests) - Math.min(...rests);
+
+  return { rounds, score: { uniquePairs, restSpread } };
 }
 
 /* Commit round results to history (called when moving to next round) */
@@ -1694,22 +1907,95 @@ $('players-list').addEventListener('click', (e) => {
 
 $('back-setup').addEventListener('click', () => showScreen('setup'));
 
+function planAndPreview() {
+  state.history = { partnerCount: {}, opponentCount: {}, restCount: {} };
+  state.currentRound = 0;
+  const N = state.players.length;
+  const effC = Math.max(1, Math.min(state.config.courts, Math.floor(N / 4)));
+  const { rounds, score } = planSchedule(state.players, effC, state.config.rounds);
+  state.rounds = rounds;
+  state.scheduleScore = score;
+  renderPreview();
+  save();
+}
+
 $('go-tournament').addEventListener('click', () => {
   if (state.players.length < 4) {
     showToast('Минимум 4 игрока');
     return;
   }
-  // Reset rounds and history
-  state.rounds = [];
-  state.history = { partnerCount: {}, opponentCount: {}, restCount: {} };
-  state.currentRound = 0;
-  const firstRound = generateRound();
-  state.rounds.push(firstRound);
+  planAndPreview();
+  showScreen('preview');
+});
+
+$('btn-regenerate').addEventListener('click', () => {
+  planAndPreview();
+  showToast('Расписание перегенерировано');
+});
+
+$('back-preview').addEventListener('click', () => showScreen('players'));
+
+$('btn-start-tournament').addEventListener('click', () => {
+  if (!state.rounds || state.rounds.length === 0) {
+    showToast('Расписание пустое');
+    return;
+  }
   showScreen('tournament');
   renderTournament();
   renderStandings();
   save();
 });
+
+function renderPreview() {
+  const N = state.players.length;
+  const totalPairs = (N * (N - 1)) / 2;
+  const score = state.scheduleScore || { uniquePairs: 0, restSpread: 0 };
+
+  $('preview-pairs').textContent = `${score.uniquePairs}/${totalPairs}`;
+  $('preview-spread').textContent = score.restSpread;
+  $('preview-rounds').textContent = state.rounds.length;
+
+  const badge = $('preview-badge');
+  if (score.uniquePairs >= totalPairs && score.restSpread <= 1) {
+    badge.textContent = 'Идеальная ротация: каждая пара играет хотя бы раз, отдых распределён ровно.';
+    badge.className = 'card-sub preview-badge good';
+  } else if (score.uniquePairs >= totalPairs) {
+    badge.textContent = `Все пары охвачены, но разброс отдыха = ${score.restSpread} (одни отдыхают на ${score.restSpread} больше других).`;
+    badge.className = 'card-sub preview-badge warn';
+  } else {
+    const missing = totalPairs - score.uniquePairs;
+    badge.textContent = `Не хватает ${missing} пар(ы) для полного покрытия. Увеличь раунды или попробуй перегенерировать.`;
+    badge.className = 'card-sub preview-badge warn';
+  }
+
+  const html = state.rounds.map((round, idx) => {
+    const restNames = round.resters && round.resters.length
+      ? round.resters.map(id => getPlayer(id)?.name || '?').join(', ')
+      : null;
+    const matches = round.matches.map(m => {
+      const t1 = m.team1.map(id => getPlayer(id)?.name || '?');
+      const t2 = m.team2.map(id => getPlayer(id)?.name || '?');
+      return `
+        <div class="preview-match">
+          <div class="preview-team">${escapeHtml(t1[0])}<span class="amp">&</span>${escapeHtml(t1[1])}</div>
+          <div class="preview-vs">VS</div>
+          <div class="preview-team right">${escapeHtml(t2[0])}<span class="amp">&</span>${escapeHtml(t2[1])}</div>
+          <div class="court">Корт ${m.court}</div>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="preview-round">
+        <div class="preview-round-head">
+          <div class="preview-round-num">Раунд ${idx + 1}</div>
+          ${restNames ? `<div class="preview-round-rest">Отдых: ${escapeHtml(restNames)}</div>` : ''}
+        </div>
+        ${matches}
+      </div>
+    `;
+  }).join('');
+  $('preview-rounds-list').innerHTML = html;
+}
 
 // Tabs
 document.querySelectorAll('.tab').forEach(tab => {
@@ -2156,6 +2442,9 @@ function init() {
     showScreen('tournament');
     renderTournament();
     renderStandings();
+  } else if (restored && state.screen === 'preview' && state.rounds.length > 0) {
+    showScreen('preview');
+    renderPreview();
   } else if (restored && state.screen === 'players') {
     showScreen('players');
     renderPlayers();
