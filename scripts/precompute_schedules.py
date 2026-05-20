@@ -55,8 +55,12 @@ def all_team_splits(four):
     return out
 
 
-def build_and_solve(N, C, R, target_variants=TARGET_VARIANTS, max_seconds=120):
-    """Run CP-SAT to find up to target_variants optimal schedules."""
+def build_and_solve(N, C, R, target_variants=TARGET_VARIANTS, max_seconds=120, hard_opp_max=None):
+    """Run CP-SAT to find up to target_variants optimal schedules.
+
+    If hard_opp_max is given, treat it as a hard constraint (every pair's
+    opp count must equal floor(avg) or ceil(avg), and opp_max <= hard_opp_max).
+    This converts the slow minimisation into fast feasibility checks."""
     print(f"\n=== N={N}, C={C}, R={R} ===", flush=True)
     matches = all_matches(N)
     print(f"  candidate 4-tuples: {len(matches)}", flush=True)
@@ -195,12 +199,17 @@ def build_and_solve(N, C, R, target_variants=TARGET_VARIANTS, max_seconds=120):
                 t_vars[triple].Not() for triple in forbid
             ])
 
-        # Objective
-        if optimum_partner_dups is None:
+        # Hard constraint mode: pin everything to mathematical optimum
+        # and search for feasible distinct solutions only.
+        if hard_opp_max is not None:
+            model.Add(total_partner_dups == 0)
+            model.Add(opp_max <= hard_opp_max)
+            model.Add(opp_min >= floor_opp)
+        elif optimum_partner_dups is None:
             # Phase 1: minimise partner dups, secondary minimise opp max
             model.Minimize(total_partner_dups * 1000 + opp_max * 10 + opp_min * (-1))
         else:
-            # Phase 2: fix optimum partner_dups, minimise opp max
+            # Phase 2: fix optimum partner_dups and opp range
             model.Add(total_partner_dups == optimum_partner_dups)
             model.Add(opp_max == optimum_opp_max)
             model.Add(opp_min == optimum_opp_min)
@@ -228,6 +237,10 @@ def build_and_solve(N, C, R, target_variants=TARGET_VARIANTS, max_seconds=120):
                 f"  optimum found: partner_dups={pd}, opp {omin}..{omax} (in {dt:.1f}s)",
                 flush=True,
             )
+        elif hard_opp_max is not None:
+            # Track optimum from hard-constrained solves too.
+            optimum_opp_max = max(optimum_opp_max or 0, omax)
+            optimum_opp_min = min(optimum_opp_min if optimum_opp_min is not None else 999, omin)
 
         # Extract solution
         rounds = []
