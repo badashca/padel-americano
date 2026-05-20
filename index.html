@@ -1510,6 +1510,24 @@ function planSchedule(players, C, R) {
     rest[p.id] = 0;
   }
 
+  // Phase 0: try a precomputed mathematically-optimal schedule first.
+  const precomputed = lookupPrecomputed(N, C);
+  if (precomputed) {
+    // Use the precomputed variant for as many rounds as it covers, then
+    // (if user asked for more rounds than the optimal layout has) extend
+    // with greedy.
+    const takeR = Math.min(R, precomputed.R);
+    let rounds = buildScheduleFromPrecomputed(players, C, takeR, precomputed);
+    for (const round of rounds) applyRoundCounts(round, partner, opponent, rest, +1);
+    if (R > takeR) {
+      const extra = planRoundsGreedy(players, C, R - takeR, partner, opponent, rest);
+      rounds = rounds.concat(extra);
+    }
+    const score = scoreSchedule(players, partner, opponent, rest);
+    score.fromPrecomputed = true;
+    return { rounds, score };
+  }
+
   let rounds = [];
 
   // For N divisible by 4 AND every court filled (C === N/4): use Whist
@@ -2274,8 +2292,9 @@ function renderPreview() {
   const partnerOK = score.partnerDups === 0;
   const restOK = score.restSpread <= 1;
   const oppOK = score.opponentDups === 0;
+  const verifiedPrefix = score.fromPrecomputed ? 'Проверенный оптимум · ' : '';
   if (partnerOK && restOK && oppOK) {
-    badge.textContent = `Идеальная ротация: ни одной повторной пары, отдых ровный, соперники у каждого по ${score.oppFloor} раз.`;
+    badge.textContent = `${verifiedPrefix}Идеальная ротация: ни одной повторной пары, отдых ровный, соперники у каждого по ${score.oppFloor} раз.`;
     badge.className = 'card-sub preview-badge good';
   } else if (partnerOK) {
     const issues = [];
@@ -2790,7 +2809,62 @@ _origScoreInput.addEventListener('click', e => {
    INIT
    ==================================================================== */
 
+/* ====================================================================
+   PRECOMPUTED SCHEDULES — mathematically optimal layouts produced by
+   the CP-SAT solver in scripts/precompute_schedules.py. Loaded once at
+   startup; planSchedule prefers a stored variant over the runtime
+   greedy/Whist algorithms when the (N, C) config has been precomputed.
+   ==================================================================== */
+window.PRECOMPUTED = null;
+
+async function loadPrecomputedSchedules() {
+  try {
+    const resp = await fetch('./data/schedules.json', { cache: 'no-cache' });
+    if (!resp.ok) return;
+    window.PRECOMPUTED = await resp.json();
+  } catch (_) {
+    /* offline / not found — runtime algorithm will be used */
+  }
+}
+
+function lookupPrecomputed(N, C) {
+  if (!window.PRECOMPUTED || !window.PRECOMPUTED.configs) return null;
+  const cfg = window.PRECOMPUTED.configs[`${N}-${C}`];
+  if (!cfg || !cfg.variants || cfg.variants.length === 0) return null;
+  return cfg;
+}
+
+function buildScheduleFromPrecomputed(players, C, R, cfg) {
+  // Variant rotation: cycle through stored variants on each call so
+  // back-to-back regenerations give different rotations.
+  const key = `precomputedIdx_${players.length}_${C}`;
+  let idx = parseInt(localStorage.getItem(key), 10);
+  if (isNaN(idx)) idx = -1;
+  idx = (idx + 1) % cfg.variants.length;
+  localStorage.setItem(key, String(idx));
+
+  // Random player-to-slot mapping so names get spread across the
+  // canonical positions every time, not just every variant.
+  const slotToId = shuffle(players).map(p => p.id);
+
+  const variant = cfg.variants[idx];
+  const sourceRounds = variant.rounds.slice(0, R);
+  return sourceRounds.map(round => {
+    const matches = round.matches.map((m, courtIdx) => ({
+      court: courtIdx + 1,
+      team1: [slotToId[m[0]], slotToId[m[1]]],
+      team2: [slotToId[m[2]], slotToId[m[3]]],
+      score1: null,
+      score2: null,
+    }));
+    return { matches, resters: [] };
+  });
+}
+
 function init() {
+  // Kick off the precomputed-schedules fetch before any planning happens.
+  loadPrecomputedSchedules();
+
   // Check URL for shared state first
   const urlParams = new URLSearchParams(location.search);
   const sharedToken = urlParams.get('t');

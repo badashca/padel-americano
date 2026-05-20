@@ -13,6 +13,7 @@ const APP_SHELL = [
   './icon-192.png',
   './icon-512.png',
   './icon-180.png',
+  './data/schedules.json',
 ];
 
 self.addEventListener('install', (event) => {
