@@ -1381,7 +1381,15 @@ function recommendFormat(N, C, T) {
   C = Math.max(1, Math.min(C|0, Math.floor(N / 4) || 1));
   T = Math.max(30, T|0);
 
-  const fullRotationRounds = Math.ceil((N * (N - 1)) / (4 * C));
+  // If a precomputed optimal schedule exists for this config, use its
+  // round count — that's the proven-best length for this player/court
+  // combination, not just a formula approximation.
+  const precomputed = typeof lookupPrecomputed === 'function'
+    ? lookupPrecomputed(N, C)
+    : null;
+  const fullRotationRounds = precomputed
+    ? precomputed.R
+    : Math.ceil((N * (N - 1)) / (4 * C));
   const candidates = [16, 21, 24, 28, 32];
   const transition = 2; // minutes between rounds (gather, switch, drinks)
 
@@ -1399,14 +1407,20 @@ function recommendFormat(N, C, T) {
   }
 
   // Fallback: even at minimum points (16) the full rotation won't fit.
-  // Keep matches short (16 pts) and reduce rounds to fit T — user can
-  // bump the time field if they want full coverage.
+  // - For precomputed configs: keep the proven-optimal R rounds (user
+  //   should bump the time field if matches need to be shorter than
+  //   16 pts to fit) — losing rounds would lose the proven optimum.
+  // - For non-precomputed: shrink rounds at minimum points to fit T.
   if (!best) {
     const pts = candidates[0];
     const roundMin = pts * 0.5 + 2;
-    const fitRounds = Math.max(3, Math.floor((T + transition) / (roundMin + transition)));
-    const rounds = Math.min(fitRounds, fullRotationRounds);
-    best = { rounds, points: pts, roundMin };
+    if (precomputed) {
+      best = { rounds: fullRotationRounds, points: pts, roundMin };
+    } else {
+      const fitRounds = Math.max(3, Math.floor((T + transition) / (roundMin + transition)));
+      const rounds = Math.min(fitRounds, fullRotationRounds);
+      best = { rounds, points: pts, roundMin };
+    }
   }
 
   const playPerRound = Math.min(N, C * 4);
@@ -2839,6 +2853,11 @@ async function loadPrecomputedSchedules() {
     const resp = await fetch('./data/schedules.json', { cache: 'no-cache' });
     if (!resp.ok) return;
     window.PRECOMPUTED = await resp.json();
+    // Re-render the recommendation now that we know which configs have
+    // proven-optimal schedules — for those, suggest the exact round count.
+    if (typeof renderRecommendation === 'function' && $('cfg-players')) {
+      renderRecommendation();
+    }
   } catch (_) {
     /* offline / not found — runtime algorithm will be used */
   }
