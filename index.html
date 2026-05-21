@@ -2885,6 +2885,7 @@ function buildScheduleFromPrecomputed(players, C, R, cfg) {
 
   const variant = cfg.variants[idx];
   const sourceRounds = variant.rounds.slice(0, R);
+  const allIds = new Set(slotToId);
   return sourceRounds.map(round => {
     const matches = round.matches.map((m, courtIdx) => ({
       court: courtIdx + 1,
@@ -2893,7 +2894,15 @@ function buildScheduleFromPrecomputed(players, C, R, cfg) {
       score1: null,
       score2: null,
     }));
-    return { matches, resters: [] };
+    // Derive resters as players not appearing in any match this round.
+    // Stored variants only list matches; the rest follows automatically.
+    const playing = new Set();
+    for (const m of matches) {
+      for (const id of m.team1) playing.add(id);
+      for (const id of m.team2) playing.add(id);
+    }
+    const resters = [...allIds].filter(id => !playing.has(id));
+    return { matches, resters };
   });
 }
 
