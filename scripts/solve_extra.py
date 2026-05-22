@@ -120,9 +120,11 @@ def solve_unique_partners(N, C, R, target_variants=20, max_seconds=600):
         model.AddMaxEquality(opp_max, list(opp_count.values()))
         model.AddMinEquality(opp_min, list(opp_count.values()))
 
-        # Rest balance (max - min <= 1)
+        # Rest balance — strict equality when math allows it, ±1 otherwise.
         resting_per_round = N - playing_per_round
         if resting_per_round > 0:
+            total_rest_slots = R * resting_per_round
+            tight_rest_possible = (total_rest_slots % N == 0)
             rest_counts = []
             for i in range(N):
                 rest_var = model.NewIntVar(0, R, f"rest_{i}")
@@ -137,7 +139,10 @@ def solve_unique_partners(N, C, R, target_variants=20, max_seconds=600):
             rmax = model.NewIntVar(0, R, "rmax")
             model.AddMinEquality(rmin, rest_counts)
             model.AddMaxEquality(rmax, rest_counts)
-            model.Add(rmax - rmin <= 1)
+            if tight_rest_possible:
+                model.Add(rmax == rmin)
+            else:
+                model.Add(rmax - rmin <= 1)
 
         # Exclude previously found solutions
         for forbid in forbidden:
@@ -212,9 +217,14 @@ def save_config(N, C, R, variants):
 
 CONFIGS = [
     # (N, C, R, max_seconds_per_solve)
+    # R is chosen so that:
+    #   - partner_dups can be 0 (R * 2C <= N*(N-1)/2)
+    #   - rest is exactly equal across players (R * (N - 4C) divisible by N)
+    # When both constraints conflict we prefer equal rest — uneven rest is
+    # a worse UX issue than missing a few pair-partnerships.
     (5,  1,  5,  60),
     (9,  2,  9,  300),
-    (10, 2, 11,  600),    # R=11, NOT 12 — keeps partner_dups=0
+    (10, 2, 10,  600),    # R=10 (not 11): 20 rest/10 = exactly 2 each, 5 pairs miss
     (13, 3, 13, 1800),
 ]
 
