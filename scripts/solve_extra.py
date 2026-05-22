@@ -222,10 +222,16 @@ CONFIGS = [
     #   - rest is exactly equal across players (R * (N - 4C) divisible by N)
     # When both constraints conflict we prefer equal rest — uneven rest is
     # a worse UX issue than missing a few pair-partnerships.
-    (5,  1,  5,  60),
-    (9,  2,  9,  300),
-    (10, 2, 10,  600),    # R=10 (not 11): 20 rest/10 = exactly 2 each, 5 pairs miss
-    (13, 3, 13, 1800),
+    (5,  1,  5,   60),    # 0 dups, opp 2..2, rest 1 each
+    (6,  1,  6,  120),    # 0 dups, rest 2 each, 3 pairs miss
+    (7,  1,  7,  120),    # 0 dups, rest 3 each, 7 pairs miss
+    (9,  2,  9,  300),    # 0 dups, opp 2..2, rest 1 each
+    (10, 2, 10,  600),    # 0 dups, rest 2 each, 5 pairs miss
+    (11, 2, 11,  900),    # 0 dups, rest 3 each, 11 pairs miss
+    (13, 3, 13, 1800),    # 0 dups, rest 1 each
+    (14, 3, 14, 2400),    # 0 dups, rest 2 each, 7 pairs miss
+    (15, 3, 15, 3000),    # 0 dups, rest 3 each, 15 pairs miss
+    (16, 4, 15, 3600),    # 0 dups, no rest, full coverage (Whist-perfect)
 ]
 
 
