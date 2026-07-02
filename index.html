@@ -2772,6 +2772,7 @@ $('btn-start-tournament').addEventListener('click', () => {
     return;
   }
   showScreen('tournament');
+  activateTab('round'); // всегда начинаем с вкладки «Раунд» (важно для 2-го турнира)
   renderTournament();
   renderStandings();
   save();
@@ -2931,17 +2932,17 @@ function renderPreview() {
 }
 
 // Tabs
+function activateTab(which) {
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === which));
+  $('tab-round').style.display = which === 'round' ? '' : 'none';
+  $('tab-standings').style.display = which === 'standings' ? '' : 'none';
+  $('tab-history').style.display = which === 'history' ? '' : 'none';
+  if (which === 'standings') renderStandings();
+  if (which === 'history') renderHistory();
+}
 document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    const which = tab.dataset.tab;
-    $('tab-round').style.display = which === 'round' ? '' : 'none';
-    $('tab-standings').style.display = which === 'standings' ? '' : 'none';
-    $('tab-history').style.display = which === 'history' ? '' : 'none';
-    if (which === 'standings') renderStandings();
-    if (which === 'history') renderHistory();
-  });
+  tab.addEventListener('click', () => activateTab(tab.dataset.tab));
 });
 
 // Score inputs (delegated)
@@ -3004,12 +3005,7 @@ $('btn-next-round').addEventListener('click', () => {
 
   const isLast = state.currentRound >= state.config.rounds - 1;
   if (isLast) {
-    // switch to standings tab
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelector('.tab[data-tab="standings"]').classList.add('active');
-    $('tab-round').style.display = 'none';
-    $('tab-standings').style.display = '';
-    renderStandings();
+    activateTab('standings'); // показать итоговую таблицу
     showToast('🏆 Турнир завершён');
     save();
     return;
