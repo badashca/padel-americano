@@ -736,6 +736,17 @@
     font-weight: 600;
     padding: 4px 8px;
     border-radius: 6px;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+  }
+  .badge.badge-complete { background: var(--lime); color: var(--ink); }
+  .badge.badge-full {
+    background: var(--coral); color: #fff;
+    animation: badge-shake 0.4s;
+  }
+  @keyframes badge-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
   }
   .toast {
     position: fixed;
@@ -978,6 +989,39 @@
     color: var(--ink-soft);
   }
 
+  /* ---------- Online registration ---------- */
+  .btn-tg {
+    background: #29a0da; color: #fff; border: none;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-tg:hover { background: #1f8fc4; }
+  .btn-tg svg { width: 18px; height: 18px; }
+  .reg-meta {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 12px; font-size: 13px; color: var(--ink-soft);
+  }
+  .reg-meta b { color: var(--ink); letter-spacing: 0.14em; }
+  .badge.badge-live { background: var(--coral); color: #fff; }
+  .badge.badge-closed { background: var(--ink-mute); color: #fff; }
+  /* Player-facing join screen hides the organizer chrome. */
+  body[data-join="1"] .top,
+  body[data-join="1"] #screen-setup,
+  body[data-join="1"] #screen-players,
+  body[data-join="1"] #screen-preview,
+  body[data-join="1"] #screen-tournament { display: none !important; }
+  .join-big-count {
+    font-family: "Bricolage Grotesque", serif; font-weight: 700;
+    font-size: 15px; color: var(--ink-soft); margin-top: 4px;
+  }
+  .join-done {
+    text-align: center; padding: 8px 0;
+  }
+  .join-done .checkmark {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--lime); color: var(--ink);
+    display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;
+  }
+
   body[data-readonly="1"] .score-input {
     opacity: 0.55;
     pointer-events: none;
@@ -1123,9 +1167,76 @@
       </div>
     </div>
 
+    <!-- Онлайн-регистрация через ссылку (Telegram) -->
+    <div class="card" id="online-reg-card">
+      <div style="display:flex; justify-content: space-between; align-items: baseline;">
+        <h2 class="card-title">Онлайн-регистрация</h2>
+        <span class="badge mono" id="reg-status">офлайн</span>
+      </div>
+      <p class="card-sub">Игроки записываются сами: поделись ссылкой в Telegram — имена появятся в списке выше.</p>
+
+      <div id="reg-idle">
+        <button class="btn btn-primary btn-block" id="reg-open">Открыть регистрацию по ссылке</button>
+      </div>
+
+      <div id="reg-active" hidden>
+        <div class="share-link-box">
+          <input id="reg-link-input" type="text" readonly />
+          <button class="btn btn-primary" id="reg-copy">Копир.</button>
+        </div>
+        <button class="btn btn-tg btn-block" id="reg-telegram">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.94 4.63c.28-1.2-.86-2.16-1.98-1.7L2.9 9.6c-1.24.5-1.2 2.28.06 2.72l4.14 1.44 1.6 5.1c.2.65 1 .87 1.5.4l2.3-2.16 4.14 3.03c.7.5 1.7.13 1.9-.72l3.35-14.78zM8.7 13.2l8.3-5.1c.16-.1.33.12.2.25l-6.83 6.4c-.24.22-.4.53-.45.86l-.23 1.7-1-3.03a.6.6 0 0 1 .3-.7l-.29-.28z"/></svg>
+          Поделиться в Telegram
+        </button>
+        <div class="reg-meta">
+          <span>Код: <b class="mono" id="reg-code">—</b></span>
+          <span id="reg-count">0 / 0 записались</span>
+        </div>
+        <div class="modal-actions" style="margin-top:14px;">
+          <button class="btn btn-ghost" id="reg-toggle-close">Закрыть приём</button>
+          <button class="btn btn-ghost" id="reg-stop">Завершить</button>
+        </div>
+      </div>
+    </div>
+
     <div class="footer-nav">
       <button class="btn btn-ghost" id="back-setup">← Назад</button>
       <button class="btn btn-primary btn-block" id="go-tournament" disabled>Дальше: расписание →</button>
+    </div>
+  </section>
+
+  <!-- ============ JOIN (player self-registration) ============ -->
+  <section id="screen-join" class="screen">
+    <div class="brand" style="margin-bottom:20px;">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">Americano</div>
+        <div class="brand-sub">Padel · Регистрация</div>
+      </div>
+    </div>
+    <span class="eyebrow">Запись на турнир</span>
+    <h1 class="title" id="join-title">Впиши <em>себя</em> в список</h1>
+    <p class="lede" id="join-lede">Введи своё имя — организатор увидит тебя в составе.</p>
+
+    <div class="card" id="join-form-card">
+      <div style="display:flex; justify-content: space-between; align-items: baseline;">
+        <h2 class="card-title">Твоё имя</h2>
+        <span class="badge mono" id="join-count">— / —</span>
+      </div>
+      <div class="add-row">
+        <input id="join-name" class="text-input" type="text" placeholder="Например, Аня" maxlength="32" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary btn-block" id="join-submit" style="margin-top:12px;">Записаться</button>
+      <div class="players-list" id="join-list" style="margin-top:16px;"></div>
+    </div>
+
+    <div class="card" id="join-done-card" hidden>
+      <div class="join-done">
+        <div class="checkmark"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h2 class="card-title">Ты в списке! 🎾</h2>
+        <p class="card-sub" id="join-done-msg">Осталось дождаться начала турнира.</p>
+      </div>
+      <div class="players-list" id="join-list-done" style="margin-top:8px;"></div>
     </div>
   </section>
 
@@ -1296,6 +1407,11 @@
 
 const STORAGE_KEY = 'americano_padel_v1';
 
+/* ---- Онлайн-регистрация ----
+   Публичный URL бэкенда на Railway (проект rota-registration).
+   Если сменишь сервер — поменяй здесь. Пусто = блок регистрации скрыт. */
+const API_BASE = 'https://rota-production-38a5.up.railway.app';
+
 const state = {
   screen: 'setup',
   config: {
@@ -1313,6 +1429,7 @@ const state = {
     restCount: {},
   },
   currentRound: 0,
+  reg: null,     // { code, adminToken } — активная сессия онлайн-регистрации
 };
 
 /* ---------- Persistence ---------- */
@@ -1326,6 +1443,7 @@ function save() {
       history: state.history,
       currentRound: state.currentRound,
       scheduleScore: state.scheduleScore,
+      reg: state.reg,
     }));
   } catch (e) { console.warn('save failed', e); }
 }
@@ -2018,7 +2136,15 @@ function renderRecommendation() {
 function renderPlayers() {
   const list = $('players-list');
   const cfgN = state.config.players;
-  $('players-count').textContent = `${state.players.length} / ${cfgN}`;
+  const isFull = cfgN && state.players.length >= cfgN;
+  const badge = $('players-count');
+  badge.textContent = `${state.players.length} / ${cfgN}`;
+  badge.classList.toggle('badge-complete', isFull);
+  // Block adding beyond the configured player count.
+  $('add-player').disabled = isFull;
+  const inp = $('new-player-name');
+  inp.disabled = isFull;
+  inp.placeholder = isFull ? `Набрано ${cfgN} игроков` : 'Имя игрока';
   if (state.players.length === 0) {
     list.innerHTML = '<div class="empty">Пока никого. Добавь первого игрока ↑</div>';
   } else {
@@ -2218,6 +2344,14 @@ function addPlayer() {
   const inp = $('new-player-name');
   const name = inp.value.trim();
   if (!name) return;
+  const cap = state.config.players;
+  if (cap && state.players.length >= cap) {
+    // Reached the configured number of players — block further additions.
+    const badge = $('players-count');
+    badge.classList.add('badge-full');
+    setTimeout(() => badge.classList.remove('badge-full'), 600);
+    return;
+  }
   state.players.push({ id: uid(), name });
   inp.value = '';
   inp.focus();
@@ -2229,10 +2363,257 @@ $('players-list').addEventListener('click', (e) => {
   const del = e.target.closest('button[data-del]');
   if (!del) return;
   const id = del.dataset.del;
+  const gone = state.players.find(p => p.id === id);
   state.players = state.players.filter(p => p.id !== id);
   renderPlayers();
   save();
+  // Если удалили онлайн-игрока — убрать и на сервере, иначе опрос вернёт его.
+  if (gone && gone.sid && state.reg) {
+    fetch(`${API_BASE}/api/tournaments/${state.reg.code}/players/${gone.sid}`, {
+      method: 'DELETE', headers: { 'X-Admin-Token': state.reg.adminToken },
+    }).catch(() => {});
+  }
 });
+
+/* ====================================================================
+   ОНЛАЙН-РЕГИСТРАЦИЯ (сторона организатора)
+   ==================================================================== */
+let regPollTimer = null;
+let regData = null; // последнее состояние сессии с сервера
+
+function buildJoinLink(code) {
+  return location.origin + location.pathname + '?join=' + code;
+}
+
+// Влить онлайн-зарегистрированных игроков в состав, сохранив ручные записи.
+function mergeOnlinePlayers(serverPlayers) {
+  // Убрать ранее синхронизированных, которых больше нет на сервере.
+  const liveIds = new Set(serverPlayers.map(p => p.id));
+  state.players = state.players.filter(p => !p.sid || liveIds.has(p.sid));
+  // Добавить новых (без дублей по имени с ручными записями).
+  for (const sp of serverPlayers) {
+    if (state.players.some(p => p.sid === sp.id)) continue;
+    if (state.players.some(p => !p.sid && p.name.toLowerCase() === sp.name.toLowerCase())) continue;
+    state.players.push({ id: uid(), name: sp.name, sid: sp.id });
+  }
+}
+
+function renderReg() {
+  const card = $('online-reg-card');
+  if (!card) return;
+  // Без настроенного бэкенда блок скрыт.
+  card.style.display = API_BASE ? '' : 'none';
+  const active = !!state.reg;
+  $('reg-idle').hidden = active;
+  $('reg-active').hidden = !active;
+  const status = $('reg-status');
+  if (!active) {
+    status.textContent = 'офлайн';
+    status.className = 'badge mono';
+    return;
+  }
+  $('reg-link-input').value = buildJoinLink(state.reg.code);
+  $('reg-code').textContent = state.reg.code;
+  const max = regData ? regData.maxPlayers : state.config.players;
+  const n = regData ? regData.players.length : 0;
+  $('reg-count').textContent = `${n} / ${max} записались`;
+  const closed = regData && regData.closed;
+  status.textContent = closed ? 'приём закрыт' : 'приём открыт';
+  status.className = 'badge mono ' + (closed ? 'badge-closed' : 'badge-live');
+  $('reg-toggle-close').textContent = closed ? 'Снова открыть' : 'Закрыть приём';
+}
+
+async function pollReg() {
+  if (!state.reg || !API_BASE) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/tournaments/${state.reg.code}`, { cache: 'no-store' });
+    if (r.status === 404) { stopRegSession(true); showToast('Сессия регистрации не найдена'); return; }
+    if (!r.ok) return;
+    regData = await r.json();
+    mergeOnlinePlayers(regData.players);
+    renderReg();
+    renderPlayers();
+    save();
+  } catch (e) { /* сеть недоступна — тихо ждём следующего опроса */ }
+}
+
+function startRegPolling() {
+  stopRegPolling();
+  pollReg();
+  regPollTimer = setInterval(pollReg, 4000);
+}
+function stopRegPolling() {
+  if (regPollTimer) { clearInterval(regPollTimer); regPollTimer = null; }
+}
+
+async function openRegistration() {
+  if (!API_BASE) { showToast('Онлайн-регистрация не настроена (укажи API_BASE)'); return; }
+  const btn = $('reg-open');
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API_BASE}/api/tournaments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ maxPlayers: state.config.players, title: '' }),
+    });
+    if (!r.ok) throw new Error('create failed');
+    const data = await r.json();
+    state.reg = { code: data.code, adminToken: data.adminToken };
+    regData = { code: data.code, title: '', maxPlayers: data.maxPlayers, closed: false, players: [] };
+    save();
+    renderReg();
+    startRegPolling();
+    showToast('Регистрация открыта — делись ссылкой!');
+  } catch (e) {
+    showToast('Не удалось открыть регистрацию');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function toggleRegClosed() {
+  if (!state.reg) return;
+  const wantClose = !(regData && regData.closed);
+  try {
+    const r = await fetch(`${API_BASE}/api/tournaments/${state.reg.code}/close`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': state.reg.adminToken },
+      body: JSON.stringify({ closed: wantClose }),
+    });
+    if (r.ok) { regData = await r.json(); renderReg(); showToast(wantClose ? 'Приём закрыт' : 'Приём снова открыт'); }
+  } catch (e) { showToast('Не удалось изменить статус'); }
+}
+
+// «Завершить» — отвязать сессию у организатора (записанные игроки остаются в списке).
+function stopRegSession(silent) {
+  stopRegPolling();
+  state.reg = null;
+  regData = null;
+  // Снять пометку sid — теперь это обычные игроки состава.
+  state.players.forEach(p => { delete p.sid; });
+  renderReg();
+  renderPlayers();
+  save();
+  if (!silent) showToast('Онлайн-регистрация завершена');
+}
+
+$('reg-open').addEventListener('click', openRegistration);
+$('reg-copy').addEventListener('click', () => copyText(buildJoinLink(state.reg.code)));
+$('reg-telegram').addEventListener('click', () => {
+  const url = buildJoinLink(state.reg.code);
+  const text = 'Записывайся на падел-турнир (Американо) 🎾';
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank');
+});
+$('reg-toggle-close').addEventListener('click', toggleRegClosed);
+$('reg-stop').addEventListener('click', stopRegSession);
+// Мгновенно обновить список, когда организатор возвращается на вкладку
+// (фоновые вкладки браузер опрашивает реже).
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && state.reg) pollReg();
+});
+
+/* ====================================================================
+   ОНЛАЙН-РЕГИСТРАЦИЯ (сторона игрока) — экран ?join=CODE
+   ==================================================================== */
+let joinCode = null;
+let joinPollTimer = null;
+let joinRegistered = false;
+
+function renderJoinList(el, players) {
+  el.innerHTML = players.map((p, i) => `
+    <div class="player-row">
+      <span class="player-num mono">${String(i + 1).padStart(2, '0')}</span>
+      <span class="player-name">${escapeHtml(p.name)}</span>
+    </div>`).join('') || '<div class="empty">Пока никто не записался</div>';
+}
+
+function renderJoin(data) {
+  $('join-count').textContent = `${data.players.length} / ${data.maxPlayers}`;
+  const full = data.players.length >= data.maxPlayers;
+  const closed = data.closed;
+  const nameInp = $('join-name');
+  const submit = $('join-submit');
+  if (!joinRegistered) {
+    renderJoinList($('join-list'), data.players);
+    if (closed) {
+      submit.disabled = true; nameInp.disabled = true;
+      submit.textContent = 'Приём закрыт';
+    } else if (full) {
+      submit.disabled = true; nameInp.disabled = true;
+      submit.textContent = 'Мест больше нет';
+      nameInp.placeholder = 'Список заполнен';
+    } else {
+      submit.disabled = false; nameInp.disabled = false;
+      submit.textContent = 'Записаться';
+    }
+  } else {
+    renderJoinList($('join-list-done'), data.players);
+    $('join-done-msg').textContent = closed
+      ? 'Приём закрыт. Ждём начала турнира.'
+      : `Записалось ${data.players.length} из ${data.maxPlayers}. Ждём начала турнира.`;
+  }
+}
+
+async function pollJoin() {
+  if (!joinCode) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/tournaments/${joinCode}`, { cache: 'no-store' });
+    if (r.status === 404) {
+      $('join-title').textContent = 'Регистрация не найдена';
+      $('join-lede').textContent = 'Проверь ссылку у организатора.';
+      $('join-form-card').hidden = true;
+      if (joinPollTimer) clearInterval(joinPollTimer);
+      return;
+    }
+    if (r.ok) renderJoin(await r.json());
+  } catch (e) { /* тихо ждём */ }
+}
+
+async function submitJoin() {
+  const nameInp = $('join-name');
+  const name = nameInp.value.trim();
+  if (!name) { nameInp.focus(); return; }
+  const submit = $('join-submit');
+  submit.disabled = true;
+  try {
+    const r = await fetch(`${API_BASE}/api/tournaments/${joinCode}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 201) {
+      joinRegistered = true;
+      $('join-form-card').hidden = true;
+      $('join-done-card').hidden = false;
+      $('join-title').innerHTML = 'Готово, <em>' + escapeHtml(name) + '</em>!';
+      $('join-lede').textContent = 'Ты записан(а) на турнир.';
+      if (data.tournament) renderJoin(data.tournament);
+      showToast('Ты в списке! 🎾');
+    } else if (data.error === 'duplicate') {
+      showToast('Такое имя уже записано — добавь фамилию');
+      submit.disabled = false;
+    } else if (data.error === 'full') {
+      showToast('Увы, мест больше нет'); pollJoin();
+    } else if (data.error === 'closed') {
+      showToast('Приём заявок закрыт'); pollJoin();
+    } else {
+      showToast('Не удалось записаться'); submit.disabled = false;
+    }
+  } catch (e) {
+    showToast('Нет связи с сервером'); submit.disabled = false;
+  }
+}
+
+function enterJoinMode(code) {
+  joinCode = code.toUpperCase();
+  document.body.setAttribute('data-join', '1');
+  showScreen('join');
+  $('join-submit').addEventListener('click', submitJoin);
+  $('join-name').addEventListener('keypress', (e) => { if (e.key === 'Enter') submitJoin(); });
+  pollJoin();
+  joinPollTimer = setInterval(pollJoin, 5000);
+}
 
 $('back-setup').addEventListener('click', () => showScreen('setup'));
 
@@ -2912,6 +3293,14 @@ function init() {
 
   // Check URL for shared state first
   const urlParams = new URLSearchParams(location.search);
+
+  // Player self-registration link: ?join=CODE → show only the join screen.
+  const joinParam = urlParams.get('join');
+  if (joinParam) {
+    if (API_BASE) { enterJoinMode(joinParam); return; }
+    showToast('Онлайн-регистрация не настроена');
+  }
+
   const sharedToken = urlParams.get('t');
   if (sharedToken) {
     const decoded = decodeShareState(sharedToken);
@@ -2931,6 +3320,9 @@ function init() {
   $('cfg-target').value = state.config.target;
   renderRecommendation();
   renderPlayers();
+  renderReg();
+  // Возобновить онлайн-регистрацию, если сессия ещё жива.
+  if (state.reg && API_BASE) startRegPolling();
   if (restored && state.screen === 'tournament' && state.rounds.length > 0) {
     rebuildHistory();
     showScreen('tournament');

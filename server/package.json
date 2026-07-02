@@ -1,0 +1,16 @@
+{
+  "name": "rota-registration-server",
+  "version": "1.0.0",
+  "description": "Минимальный бэкенд онлайн-регистрации для Rota (Americano padel)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

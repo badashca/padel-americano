@@ -3,7 +3,7 @@
 // При обновлении файлов на GitHub Pages меняй CACHE_VERSION на новое значение —
 // старый кеш будет удалён при следующем заходе пользователя.
 
-const CACHE_VERSION = 'rota-v23';
+const CACHE_VERSION = 'rota-v24';
 
 const APP_SHELL = [
   './',
@@ -42,6 +42,11 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-http(s) requests (e.g., chrome-extension)
   if (!req.url.startsWith('http')) return;
+
+  // НЕ кэшируем кросс-оригин запросы (онлайн-регистрация на Railway):
+  // это динамические данные, они всегда должны идти в сеть напрямую,
+  // иначе опрос будет получать устаревший (закэшированный) список игроков.
+  if (new URL(req.url).origin !== self.location.origin) return;
 
   event.respondWith(
     caches.match(req).then((cached) => {
