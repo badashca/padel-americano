@@ -458,6 +458,18 @@
   .add-row .btn { padding: 0 18px; }
 
   /* ---------- Tournament screen ---------- */
+  .t-tournament-label {
+    display: inline-block;
+    background: var(--court);
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+  }
   .round-head {
     display: flex;
     align-items: flex-end;
@@ -627,6 +639,31 @@
     border-collapse: collapse;
     margin-top: 14px;
   }
+  /* Переключатель зачёта (сегмент-контрол) */
+  .scope-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .scope-btn {
+    flex: 1;
+    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .scope-btn.active { background: var(--court); color: #fff; }
+  .standings-table .trophy-col { white-space: nowrap; font-size: 13px; }
   .standings-table th {
     text-align: left;
     font-size: 11px;
@@ -1295,6 +1332,7 @@
 
     <!-- Round tab -->
     <div id="tab-round">
+      <div id="t-tournament-label" class="t-tournament-label" style="display:none;"></div>
       <div class="round-head">
         <div class="round-num">
           <span id="t-round-current">1</span><span class="of"> / <span id="t-round-total">8</span></span>
@@ -1323,13 +1361,21 @@
           Поделиться
         </button>
       </div>
-      <h1 class="title" style="font-size:clamp(28px,5vw,40px); margin-bottom:18px;">Текущий <em>зачёт</em></h1>
+      <h1 class="title" id="standings-title" style="font-size:clamp(28px,5vw,40px); margin-bottom:18px;">Текущий <em>зачёт</em></h1>
+
+      <!-- Переключатель зачёта (виден при серии из нескольких турниров) -->
+      <div class="scope-toggle" id="standings-scope-toggle" style="display:none;">
+        <button class="scope-btn active" data-scope="current">Этот турнир</button>
+        <button class="scope-btn" data-scope="total">Общий зачёт</button>
+      </div>
+
       <div class="card">
         <table class="standings-table" id="standings-table">
           <thead>
             <tr>
               <th></th>
               <th>Игрок</th>
+              <th class="num trophy-col" id="standings-wins-head" title="Выиграно турниров" style="display:none;">🏆</th>
               <th class="num">Игр</th>
               <th class="num pnv-col" title="Поражения · Ничьи · Выигрыши">П-Н-В</th>
               <th class="num">Очки</th>
@@ -1338,6 +1384,13 @@
           </thead>
           <tbody id="standings-body"></tbody>
         </table>
+      </div>
+
+      <!-- Сыграть ещё турнир с теми же игроками -->
+      <div class="card" id="new-tournament-card">
+        <h2 class="card-title">Сыграть ещё турнир</h2>
+        <p class="card-sub">Новый турнир с теми же игроками. «Общий зачёт» суммирует очки по всем турнирам серии.</p>
+        <button class="btn btn-primary btn-block" id="btn-add-tournament">＋ Новый турнир (те же игроки)</button>
       </div>
     </div>
 
@@ -1430,6 +1483,9 @@ const state = {
   },
   currentRound: 0,
   reg: null,     // { code, adminToken } — активная сессия онлайн-регистрации
+  archivedTournaments: [], // [{ rounds, config }] — завершённые турниры серии
+  tournamentNumber: 1,     // номер текущего турнира в серии
+  standingsScope: 'current', // 'current' | 'total' — режим таблицы
 };
 
 /* ---------- Persistence ---------- */
@@ -1444,6 +1500,9 @@ function save() {
       currentRound: state.currentRound,
       scheduleScore: state.scheduleScore,
       reg: state.reg,
+      archivedTournaments: state.archivedTournaments,
+      tournamentNumber: state.tournamentNumber,
+      standingsScope: state.standingsScope,
     }));
   } catch (e) { console.warn('save failed', e); }
 }
@@ -1453,6 +1512,10 @@ function load() {
     if (!raw) return false;
     const data = JSON.parse(raw);
     Object.assign(state, data);
+    // Значения по умолчанию для состояний, сохранённых старой версией.
+    if (!Array.isArray(state.archivedTournaments)) state.archivedTournaments = [];
+    if (!state.tournamentNumber) state.tournamentNumber = 1;
+    if (!state.standingsScope) state.standingsScope = 'current';
     return true;
   } catch (e) { return false; }
 }
@@ -2016,13 +2079,40 @@ function rebuildHistory() {
 }
 
 /* ---------- Standings ---------- */
-function computeStandings() {
+// Раунды, по которым считается таблица: только текущий турнир ('current')
+// или все турниры серии вместе ('total').
+function roundsForScope(scope) {
+  if (scope === 'total') {
+    const all = [];
+    for (const t of (state.archivedTournaments || [])) all.push(...t.rounds);
+    all.push(...state.rounds);
+    return all;
+  }
+  return state.rounds;
+}
+
+// Сколько турниров в серии выиграл каждый игрок (пришёл 1-м в его зачёте).
+function tournamentWinsByPlayer() {
+  const wins = {};
+  const tallies = [...(state.archivedTournaments || []).map(t => t.rounds), state.rounds];
+  for (const rounds of tallies) {
+    const st = computeStandingsFromRounds(rounds);
+    if (st.length && st[0].games > 0) wins[st[0].id] = (wins[st[0].id] || 0) + 1;
+  }
+  return wins;
+}
+
+function computeStandings(scope = 'current') {
+  return computeStandingsFromRounds(roundsForScope(scope));
+}
+
+function computeStandingsFromRounds(rounds) {
   const stats = {};
   for (const p of state.players) {
     stats[p.id] = { id: p.id, name: p.name, games: 0, wins: 0, draws: 0, losses: 0, points: 0 };
   }
-  for (let i = 0; i < state.rounds.length; i++) {
-    const r = state.rounds[i];
+  for (let i = 0; i < rounds.length; i++) {
+    const r = rounds[i];
     for (const m of r.matches) {
       if (m.score1 == null || m.score2 == null) continue;
       const t1won = m.score1 > m.score2;
@@ -2169,6 +2259,15 @@ function escapeHtml(s) {
 }
 
 function renderTournament() {
+  // Метка номера турнира — только когда играется серия из нескольких.
+  const tl = $('t-tournament-label');
+  const seriesLen = (state.archivedTournaments || []).length + 1;
+  if (seriesLen > 1) {
+    tl.textContent = `Турнир ${state.tournamentNumber} из ${seriesLen}`;
+    tl.style.display = '';
+  } else {
+    tl.style.display = 'none';
+  }
   $('t-round-current').textContent = state.currentRound + 1;
   $('t-round-total').textContent = state.config.rounds;
   $('t-target').textContent = state.config.target;
@@ -2262,16 +2361,38 @@ function renderTournament() {
 }
 
 function renderStandings() {
-  const standings = computeStandings();
+  const hasSeries = (state.archivedTournaments || []).length > 0;
+  const scope = hasSeries ? (state.standingsScope || 'current') : 'current';
+
+  // Переключатель «Этот турнир / Общий зачёт» — только когда турниров больше одного.
+  const toggle = $('standings-scope-toggle');
+  if (toggle) {
+    toggle.style.display = hasSeries ? '' : 'none';
+    toggle.querySelectorAll('.scope-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.scope === scope));
+  }
+  const titleEl = $('standings-title');
+  if (titleEl) {
+    titleEl.innerHTML = scope === 'total'
+      ? 'Общий <em>зачёт</em>'
+      : (hasSeries ? `Турнир <em>${state.tournamentNumber}</em>` : 'Текущий <em>зачёт</em>');
+  }
+  // Колонка «🏆» (число выигранных турниров) показывается только в общем зачёте.
+  const winsHead = $('standings-wins-head');
+  if (winsHead) winsHead.style.display = scope === 'total' ? '' : 'none';
+
+  const standings = computeStandings(scope);
+  const wins = scope === 'total' ? tournamentWinsByPlayer() : {};
   const tbody = $('standings-body');
   if (standings.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Нет данных</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Нет данных</td></tr>';
     return;
   }
   tbody.innerHTML = standings.map((s, i) => `
     <tr class="${i === 0 ? 'top1' : ''}">
       <td class="rank">${i + 1}</td>
       <td class="player-cell">${escapeHtml(s.name)}</td>
+      ${scope === 'total' ? `<td class="num trophy-col">${wins[s.id] ? '🏆'.repeat(Math.min(wins[s.id], 3)) + (wins[s.id] > 3 ? '×' + wins[s.id] : '') : '—'}</td>` : ''}
       <td class="num">${s.games}</td>
       <td class="num pnv-col">${s.losses}-${s.draws}-${s.wins}</td>
       <td class="num pts-big">${s.points}</td>
@@ -2655,6 +2776,33 @@ $('btn-start-tournament').addEventListener('click', () => {
   renderStandings();
   save();
 });
+
+/* ---- Серия турниров: новый турнир с теми же игроками + общий зачёт ---- */
+$('standings-scope-toggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.scope-btn');
+  if (!btn) return;
+  state.standingsScope = btn.dataset.scope;
+  renderStandings();
+  save();
+});
+
+$('btn-add-tournament').addEventListener('click', startNextTournament);
+
+function startNextTournament() {
+  if (state.players.length < 4) { showToast('Минимум 4 игрока'); return; }
+  // Заархивировать текущий турнир (со счётом) в серию.
+  state.archivedTournaments = state.archivedTournaments || [];
+  state.archivedTournaments.push({
+    rounds: JSON.parse(JSON.stringify(state.rounds)),
+    config: { rounds: state.config.rounds, target: state.config.target },
+  });
+  state.tournamentNumber = (state.tournamentNumber || 1) + 1;
+  state.standingsScope = 'total'; // после первого «ещё турнира» показываем общий зачёт
+  // Сгенерировать новый турнир с теми же игроками/настройками и открыть превью.
+  planAndPreview();
+  showScreen('preview');
+  showToast('Турнир ' + state.tournamentNumber + ' · те же игроки');
+}
 
 $('btn-regen-remaining').addEventListener('click', () => {
   const startIdx = state.currentRound + 1; // keep current round, replan future
@@ -3134,13 +3282,20 @@ function buildShareLink() {
 }
 
 function buildShareText() {
-  const standings = computeStandings();
+  const hasSeries = (state.archivedTournaments || []).length > 0;
+  const scope = hasSeries ? (state.standingsScope || 'current') : 'current';
+  const standings = computeStandings(scope);
   const completedRounds = Math.min(state.currentRound + 1, state.rounds.length);
   const lines = [];
   lines.push(`🎾 Падел · Американо`);
-  lines.push(`${state.players.length} игроков · ${completedRounds}/${state.config.rounds} раундов · до ${state.config.target} очков`);
+  if (scope === 'total') {
+    lines.push(`${state.players.length} игроков · общий зачёт по ${(state.archivedTournaments.length + 1)} турнирам`);
+  } else {
+    const prefix = hasSeries ? `Турнир ${state.tournamentNumber} · ` : '';
+    lines.push(`${prefix}${state.players.length} игроков · ${completedRounds}/${state.config.rounds} раундов · до ${state.config.target} очков`);
+  }
   lines.push('');
-  lines.push('🏆 Таблица:');
+  lines.push(scope === 'total' ? '🏆 Общий зачёт:' : '🏆 Таблица:');
   standings.forEach((s, i) => {
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
     lines.push(`${medal} ${s.name} — ${s.points} (${s.wins}/${s.games})`);
